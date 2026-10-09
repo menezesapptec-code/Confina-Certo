@@ -116,6 +116,13 @@ svg.ic{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;strok
 #toast{position:fixed;left:50%;top:calc(68px + env(safe-area-inset-top));transform:translateX(-50%) translateY(-16px);background:var(--green);color:#fff;padding:11px 18px;border-radius:12px;font-weight:600;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:80;max-width:90vw;text-align:center}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .empty{text-align:center;color:var(--mut);padding:24px 8px}
+.login{position:fixed;inset:0;z-index:100;background:var(--green);display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
+.login.hidden{display:none}
+.login .box{background:var(--bg);border-radius:20px;padding:24px 20px;width:100%;max-width:380px}
+.login img{width:58px;height:58px;border-radius:14px;display:block;margin:0 auto 10px}
+.login h1{text-align:center;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.login .sub{text-align:center;color:var(--mut);font-size:13px;margin:2px 0 6px}
+.login .err{color:var(--red);font-size:13px;font-weight:600;min-height:18px;margin-top:10px}
 @media(min-width:700px){
   .stats{grid-template-columns:repeat(3,1fr)}
   .grid2{grid-template-columns:1fr 1fr}
@@ -143,19 +150,25 @@ svg.ic{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;strok
   <aside id="side"></aside>
   <div id="main">
     <header id="top"></header>
-    <section id="view"></section>
+    <section id="view"><div class="empty" id="boot">Carregando…</div></section>
   </div>
   <nav id="tabs"></nav>
 </div>
+<div id="login" class="login hidden"><div class="box"><img src="icon-192.png" alt=""><h1>Confina Certo</h1><p class="sub">Gestão de confinamento</p>
+<form data-form="login"><label>E-mail</label><input id="lg-e" type="email" autocomplete="username" required>
+<label>Senha</label><input id="lg-s" type="password" autocomplete="current-password" required minlength="6">
+<div class="err" id="lg-err"></div>
+<button class="btn block" style="margin-top:8px">Entrar</button>
+<button type="button" class="btn line block" style="margin-top:8px" data-act="loginCreate">Primeiro acesso — criar conta</button></form></div></div>
 <div id="modal" class="modal hidden"><div class="sheet" id="sheet"></div></div>
 <div id="toast"></div>
 
-<script>
+<script type="module">
 (function(){
 'use strict';
 
 /* ================= utilidades ================= */
-const KEY='confinaCerto.v1';
+const KEY='confinaCerto.v2';
 const $=(s,r)=>(r||document).querySelector(s);
 const fmt=(n,d=0)=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
 const brl=n=>'R$ '+fmt(n,2);
@@ -175,6 +188,21 @@ function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.i
 
 /* ================= dados ================= */
 let S=null;
+/* ===== Firebase (projeto confinacerto) — apiKey web é pública; a proteção está nas regras do Firestore ===== */
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyAcceP2bbrjFOsRk4PfliLxqjCYdY-bwys",
+  authDomain:"confinacerto.firebaseapp.com",
+  projectId:"confinacerto",
+  storageBucket:"confinacerto.firebasestorage.app",
+  messagingSenderId:"532504518917",
+  appId:"1:532504518917:web:587c3e86586f662d87176c"
+};
+const FBV='10.14.1';
+const ADMINS=['agrosafra7@gmail.com','menezesapptec@gmail.com'];
+const FB={on:false,user:null,ready:false};
+let AUTH=null,DB=null,FS=null;
+const SYNC={last:new Map(),unsubs:[],remote:null,got:null,serverCfg:false,seeded:false,timer:null};
+const isAdmin=()=>!FB.on||(FB.user&&ADMINS.includes((FB.user.email||'').toLowerCase()));
 const HORARIOS={2:['06:30','15:30'],3:['06:00','11:00','16:00'],4:['06:00','10:30','14:30','17:30']};
 const ESC=[
   {n:0,t:'Limpo',d:'Cocho raspado, sem sobra',c:'warn'},
@@ -183,11 +211,12 @@ const ESC=[
   {n:3,t:'Sobra alta',d:'Muita ração, risco de azedar',c:'bad'}
 ];
 
+const I=a=>a.map(([id,pct])=>({id,pct}));
 function seed(){
   const r=rng(42),h=hoje();
   const S0={
     v:1,
-    cfg:{fazenda:'Fazenda Demonstração',tratosDia:3,horarios:HORARIOS[3].slice(),ajuste:[3,0,-3,-6],precoArroba:310,custoOp:1.8,rend:54,pesoAbate:540},
+    cfg:{fazenda:'Fazenda Demonstração',tratosDia:3,horarios:HORARIOS[3].slice(),ajuste:[3,0,-3,-6],precoArroba:310,custoOp:1.8,rend:54,pesoAbate:540,demo:true,demoDia:h},
     insumos:[
       {id:'milho',nome:'Milho grão moído',ms:88,preco:0.95,saldo:82000},
       {id:'silagem',nome:'Silagem de milho',ms:35,preco:0.22,saldo:120000},
@@ -197,9 +226,9 @@ function seed(){
       {id:'casca',nome:'Casca de soja',ms:89,preco:0.95,saldo:22000}
     ],
     dietas:[
-      {id:'adap',nome:'Adaptação',cons:1.8,ing:[['silagem',55],['milho',25],['farelo',15],['nucleo',5]]},
-      {id:'cresc',nome:'Crescimento',cons:2.2,ing:[['silagem',35],['milho',38],['farelo',12],['casca',10],['nucleo',5]]},
-      {id:'term',nome:'Terminação',cons:2.1,ing:[['silagem',15],['milho',58],['farelo',10],['caroco',10],['nucleo',5],['casca',2]]}
+      {id:'adap',nome:'Adaptação',cons:1.8,ing:I([['silagem',55],['milho',25],['farelo',15],['nucleo',5]])},
+      {id:'cresc',nome:'Crescimento',cons:2.2,ing:I([['silagem',35],['milho',38],['farelo',12],['casca',10],['nucleo',5]])},
+      {id:'term',nome:'Terminação',cons:2.1,ing:I([['silagem',15],['milho',58],['farelo',10],['caroco',10],['nucleo',5],['casca',2]])}
     ],
     baias:[],cocho:[],tratos:[],oco:[]
   };
@@ -247,7 +276,7 @@ function load(){
   try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);if(o&&o.v===1&&o.baias&&o.cfg){S=o;return}}}catch(e){}
   seed();save();
 }
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function save(){if(FB.on){flush();return}try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 
 /* ================= cálculos ================= */
 const baia=id=>S.baias.find(b=>b.id===id);
@@ -255,8 +284,8 @@ const insumo=id=>S.insumos.find(i=>i.id===id);
 const dieta=id=>S.dietas.find(d=>d.id===id);
 function dietaCalc(d){
   let mn=0,custo=0;
-  d.ing.forEach(([id,p])=>{const i=insumo(id);mn+=p/i.ms;custo+=p*i.preco/i.ms});
-  return {mnPorMS:mn,custoMS:custo,parts:d.ing.map(([id,p])=>({id,pct:p,share:(p/insumo(id).ms)/mn}))};
+  d.ing.forEach(({id,pct})=>{const i=insumo(id);mn+=pct/i.ms;custo+=pct*i.preco/i.ms});
+  return {mnPorMS:mn,custoMS:custo,parts:d.ing.map(({id,pct})=>({id,pct,share:(pct/insumo(id).ms)/mn}))};
 }
 function gmdBaia(b){
   const p=b.pesagens;
@@ -339,10 +368,12 @@ const TITULOS={painel:'Painel',mapa:'Mapa de baias',trato:'Trato',cocho:'Leitura
 let view='painel',filtro='todas',tratoSel=1,deferredInstall=null;
 
 function chrome(){
+  if(!S)return;
   $('#side').innerHTML='<div class="brand"><img src="icon-192.png" alt="">Confina Certo</div>'+NAV.map(([id,t])=>'<a href="#'+id+'" class="'+(view===id?'on':'')+'">'+ico(id)+t+'</a>').join('');
   $('#tabs').innerHTML=TABS.map(([id,t])=>{const on=view===id||(id==='mais'&&['pesagem','estoque','custos','dietas','config'].includes(view));return '<a href="#'+id+'" class="'+(on?'on':'')+'">'+ico(id)+t+'</a>'}).join('');
-  $('#top').innerHTML='<img class="logo" src="icon-192.png" alt=""><div><h1>'+esc(TITULOS[view]||'')+'</h1><small>'+esc(S.cfg.fazenda)+'</small></div><div class="sp"></div><div class="net'+(navigator.onLine?'':' off')+'"><i></i>'+(navigator.onLine?'Online':'Offline · salvo no aparelho')+'</div>';
+  $('#top').innerHTML='<img class="logo" src="icon-192.png" alt=""><div><h1>'+esc(TITULOS[view]||'')+'</h1><small>'+esc(S.cfg.fazenda)+'</small></div><div class="sp"></div><div class="net'+(navigator.onLine?'':' off')+'"><i></i>'+netLabel()+'</div>';
 }
+function netLabel(){return !navigator.onLine?'Offline · salvo no aparelho':FB.on?'Online · sincronizado':'Modo local'}
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2600)}
 function sheet(html){$('#sheet').innerHTML='<button class="x" data-act="close" aria-label="Fechar">×</button>'+html;$('#modal').classList.remove('hidden')}
 function closeModal(){$('#modal').classList.add('hidden');$('#sheet').innerHTML=''}
@@ -491,8 +522,9 @@ VIEWS.config=()=>{
    +'<label>Horários dos tratos</label><div class="cfgrow">'+c.horarios.map((h,i)=>'<input type="time" value="'+h+'" data-cfg="hor'+i+'">').join('')+'</div></div>'
    +'<div class="card"><h3>Ajuste de trato por leitura de cocho</h3><p class="note" style="margin:4px 0 8px">Quanto o trato muda (%) a cada escore lido.</p><div class="cfgrow">'
    +ESC.map((e,i)=>'<div><label>'+e.n+' · '+e.t+'</label><input type="number" step="1" value="'+c.ajuste[i]+'" data-cfg="aj'+i+'"></div>').join('')+'</div></div>'
-   +'<div class="card"><h3>Dados</h3><p class="note" style="margin:4px 0 12px">Esta versão de demonstração guarda tudo no próprio aparelho (funciona sem internet).</p>'
-   +'<div class="acts"><button class="btn sec" data-act="export">Exportar dados</button><button class="btn sec" data-act="reset">Restaurar demonstração</button>'
+   +(FB.on?'<div class="card"><h3>Conta</h3><p class="note" style="margin:4px 0 12px">'+esc(FB.user?FB.user.email:'')+(isAdmin()?' · administrador':'')+'</p><button class="btn sec block" data-act="logout">Sair</button></div>':'')
+   +'<div class="card"><h3>Dados</h3><p class="note" style="margin:4px 0 12px">'+(FB.on?'Os dados ficam no Firebase e continuam disponíveis sem internet; as alterações sincronizam quando a conexão volta.':'Modo local: os dados ficam só neste aparelho.')+'</p>'
+   +'<div class="acts"><button class="btn sec" data-act="export">Exportar dados</button>'+(isAdmin()?'<button class="btn sec" data-act="reset">Restaurar demonstração</button>':'')
    +(deferredInstall?'<button class="btn" data-act="install" style="grid-column:1/-1">Instalar aplicativo</button>':'')+'</div></div>';
 };
 
@@ -584,6 +616,8 @@ function mEntrada(id){
 function rerender(){render(false)}
 const ACT={
   close:()=>closeModal(),
+  loginCreate:()=>authDo('create'),
+  logout:()=>{if(AUTH)AUTH.out()},
   go:d=>{location.hash='#'+d.v},
   filtro:d=>{filtro=d.f;rerender()},
   tratoSel:d=>{tratoSel=+d.n;rerender()},
@@ -603,6 +637,7 @@ const ACT={
   install:()=>{if(deferredInstall){deferredInstall.prompt();deferredInstall=null;rerender()}}
 };
 const FORMS={
+  login:()=>authDo('in'),
   cocho:()=>{
     const b=baia(M.id),obs=$('#ck-obs').value.trim(),apl=$('#ck-apl').checked,dl=S.cfg.ajuste[M.esc];
     const ex=ultimoCocho(b);
@@ -671,6 +706,7 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredIns
 window.addEventListener('hashchange',()=>{closeModal();render(true)});
 
 function render(top){
+  if(!S)return;
   const h=(location.hash||'#painel').slice(1);
   const novo=VIEWS[h]?h:'painel';
   if(novo!==view)top=true;
@@ -681,10 +717,117 @@ function render(top){
   window.scrollTo(0,top?0:y);
 }
 
-load();
-if(tratoSel>S.cfg.tratosDia)tratoSel=1;
-tratoSel=Math.min(tratoAtual(),S.cfg.tratosDia);
-render(true);
+/* ================= Firebase: login + sincronização ================= */
+const uid=()=>Math.random().toString(36).slice(2,8)+Date.now().toString(36);
+const canon=o=>JSON.stringify(o,(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a<b?-1:a>b?1:0)):v);
+const clean=o=>JSON.parse(JSON.stringify(o));
+const cmpHora=(a,b)=>(a.dia+(a.hora||''))<(b.dia+(b.hora||''))?-1:1;
+function emptyState(){
+  return {v:1,cfg:{fazenda:'Confina Certo',tratosDia:3,horarios:HORARIOS[3].slice(),ajuste:[3,0,-3,-6],precoArroba:310,custoOp:1.8,rend:54,pesoAbate:540},insumos:[],dietas:[],baias:[],cocho:[],tratos:[],oco:[]};
+}
+function docsOf(){
+  const m=new Map();
+  m.set('cfg/main',{cfg:S.cfg,insumos:S.insumos,dietas:S.dietas});
+  S.baias.forEach(b=>m.set('baias/'+b.id,b));
+  S.tratos.forEach(t=>m.set('tratos/'+t.dia+'_'+t.n+'_'+t.baiaId,t));
+  S.cocho.forEach(c=>m.set('cocho/'+c.dia+'_'+c.baiaId,c));
+  S.oco.forEach(o=>{if(!o.id)o.id=uid();m.set('oco/'+o.id,o)});
+  return m;
+}
+function flush(){
+  if(!FB.on||!FB.ready||!S||!DB)return;
+  const want=docsOf();
+  want.forEach((o,p)=>{
+    const j=canon(o);
+    if(SYNC.last.get(p)!==j){SYNC.last.set(p,j);FS.setDoc(FS.doc(DB,p),clean(o)).catch(e=>toast(msgFS(e)))}
+  });
+  [...SYNC.last.keys()].forEach(p=>{
+    if(!want.has(p)){SYNC.last.delete(p);FS.deleteDoc(FS.doc(DB,p)).catch(e=>toast(msgFS(e)))}
+  });
+}
+function rebuild(){
+  const c=SYNC.remote.cfg.get('main')||{},vals=n=>[...SYNC.remote[n].values()];
+  S={v:1,cfg:c.cfg||emptyState().cfg,insumos:c.insumos||[],dietas:c.dietas||[],
+     baias:vals('baias').sort((a,b)=>a.nome<b.nome?-1:1),tratos:vals('tratos'),cocho:vals('cocho').sort(cmpHora),oco:vals('oco').sort(cmpHora)};
+}
+function afterData(){tratoSel=Math.min(tratoAtual(),S.cfg.tratosDia)}
+function goReady(seeded){
+  clearTimeout(SYNC.timer);FB.ready=true;
+  if(seeded){SYNC.seeded=true;flush()}
+  else{rebuild();if(S.cfg.demo&&S.cfg.demoDia!==hoje()){seed();flush()}}
+  afterData();render(true);
+}
+const needSeed=()=>SYNC.serverCfg&&!SYNC.seeded&&!SYNC.remote.cfg.has('main')&&!SYNC.remote.baias.size;
+function tryReady(){
+  if(SYNC.got.size<5)return;
+  if(SYNC.remote.cfg.has('main'))return goReady(false);
+  if(needSeed()){seed();goReady(true)}
+}
+function onSnap(name,snap){
+  const m=SYNC.remote[name];m.clear();
+  [...SYNC.last.keys()].forEach(k=>{if(k.startsWith(name+'/'))SYNC.last.delete(k)});
+  snap.forEach(d=>{const o=d.data();m.set(d.id,o);SYNC.last.set(name+'/'+d.id,canon(o))});
+  if(name==='cfg'&&!snap.metadata.fromCache)SYNC.serverCfg=true;
+  SYNC.got.add(name);
+  if(!FB.ready)tryReady();
+  else if(needSeed()){seed();SYNC.seeded=true;flush();render(true)}
+  else{rebuild();render(false)}
+}
+function startSync(){
+  stopSync();
+  SYNC.remote={cfg:new Map(),baias:new Map(),tratos:new Map(),cocho:new Map(),oco:new Map()};
+  SYNC.got=new Set();SYNC.serverCfg=false;SYNC.seeded=false;
+  S=emptyState();
+  $('#view').innerHTML='<div class="empty">Sincronizando…</div>';
+  ['cfg','baias','tratos','cocho','oco'].forEach(n=>{
+    SYNC.unsubs.push(FS.onSnapshot(FS.collection(DB,n),snap=>onSnap(n,snap),e=>toast(msgFS(e))));
+  });
+  SYNC.timer=setTimeout(()=>{if(!FB.ready){rebuild();FB.ready=true;afterData();render(true);toast('Sem resposta do servidor — mostrando dados do aparelho')}},7000);
+}
+function stopSync(){
+  SYNC.unsubs.forEach(u=>{try{u()}catch(e){}});SYNC.unsubs=[];clearTimeout(SYNC.timer);SYNC.last.clear();FB.ready=false;
+}
+function msgAuth(x){
+  const c=(x&&x.code)||'';
+  return ({'auth/invalid-credential':'E-mail ou senha incorretos.','auth/wrong-password':'E-mail ou senha incorretos.','auth/user-not-found':'E-mail ou senha incorretos. No primeiro acesso, use “criar conta”.',
+   'auth/email-already-in-use':'Este e-mail já tem conta. Use “Entrar”.','auth/weak-password':'Use uma senha com pelo menos 6 caracteres.','auth/invalid-email':'E-mail inválido.',
+   'auth/network-request-failed':'Sem conexão com a internet.','auth/operation-not-allowed':'Login por e-mail/senha não está ativado no Firebase.','auth/invalid-api-key':'Chave do Firebase inválida — confira o apiKey no código.',
+   'auth/api-key-not-valid.-please-pass-a-valid-api-key.':'Chave do Firebase inválida — confira o apiKey no código.','auth/too-many-requests':'Muitas tentativas. Aguarde um pouco.'})[c]||('Não foi possível entrar ('+(c||'erro')+').');
+}
+function msgFS(x){
+  const c=(x&&x.code)||'';
+  if(c==='permission-denied')return 'Sem permissão no Firestore — confira as regras do banco.';
+  if(c==='not-found')return 'Banco Firestore não encontrado — crie o banco no console.';
+  if(c==='unavailable')return 'Servidor indisponível — salvo no aparelho, sincroniza depois.';
+  return 'Firestore: '+(c||'erro');
+}
+async function authDo(kind){
+  const e=$('#lg-e').value.trim(),pw=$('#lg-s').value,er=$('#lg-err');er.textContent='';
+  if(!AUTH){er.textContent='O Firebase não carregou. Verifique a conexão.';return}
+  try{if(kind==='in')await AUTH.signIn(e,pw);else await AUTH.create(e,pw)}catch(x){er.textContent=msgAuth(x)}
+}
+async function boot(){
+  let mods=null;
+  try{mods=await Promise.all(['app','auth','firestore'].map(n=>import('https://www.gstatic.com/firebasejs/'+FBV+'/firebase-'+n+'.js')))}catch(e){mods=null}
+  if(!mods){FB.on=false;load();afterData();render(true);toast('Modo local: o Firebase não carregou');return}
+  const [A,Au,F]=mods;
+  const app=A.initializeApp(FIREBASE_CONFIG);
+  const auth=Au.getAuth(app);
+  try{DB=F.initializeFirestore(app,{localCache:F.persistentLocalCache({tabManager:F.persistentMultipleTabManager()})})}catch(e){DB=F.getFirestore(app)}
+  FS=F;
+  AUTH={signIn:(e,p)=>Au.signInWithEmailAndPassword(auth,e,p),create:(e,p)=>Au.createUserWithEmailAndPassword(auth,e,p),out:()=>Au.signOut(auth)};
+  FB.on=true;
+  Au.onAuthStateChanged(auth,user=>{
+    FB.user=user;
+    if(user){$('#login').classList.add('hidden');startSync()}
+    else{
+      stopSync();S=null;closeModal();
+      $('#view').innerHTML='';$('#top').innerHTML='';$('#tabs').innerHTML='';$('#side').innerHTML='';
+      $('#lg-s').value='';$('#lg-err').textContent='';$('#login').classList.remove('hidden');
+    }
+  });
+}
+boot();
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
   window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
