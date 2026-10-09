@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14301f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Confina Certo</title>
+<style>
+:root{--bg:#f3efe6;--card:#fffdf8;--ink:#1d2a22;--mut:#66756b;--green:#14301f;--green2:#1f6a42;--lime:#7fb069;--amber:#e0a526;--red:#c2452d;--line:#e3dccd}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:inherit;text-decoration:none}
+#app{min-height:100vh;display:flex;flex-direction:column}
+#main{flex:1;min-width:0;display:flex;flex-direction:column}
+#top{position:sticky;top:0;z-index:20;background:var(--green);color:#f4efe6;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:12px}
+#top .logo{width:34px;height:34px;border-radius:9px;flex:none}
+#top h1{font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.1}
+#top small{display:block;font-size:12px;opacity:.7;font-weight:500}
+#top .sp{flex:1}
+.net{font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.14);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.net i{width:8px;height:8px;border-radius:50%;background:var(--lime)}
+.net.off i{background:var(--amber)}
+#view{padding:16px 16px 96px;max-width:1100px;width:100%;margin:0 auto}
+h2{font-size:20px;font-weight:800;letter-spacing:-.015em}
+h3{font-size:15px;font-weight:800}
+.mut{color:var(--mut)}
+.pgh{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
+.pgh p{font-size:13px;color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.card+.card,.stats+.card,.card+.stats{margin-top:12px}
+.grid2>.card{margin-top:0}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.stat .l{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+.stat .v{font-size:26px;font-weight:800;letter-spacing:-.025em;font-variant-numeric:tabular-nums;line-height:1.15;margin-top:2px}
+.stat .v small{font-size:13px;font-weight:600;color:var(--mut);letter-spacing:0}
+.stat .s{font-size:12px;color:var(--mut)}
+.stat.good .v{color:#237a3f}.stat.badv .v{color:var(--red)}
+.b{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap}
+.b.ok{background:#e1f0da;color:#2c6a2a}.b.warn{background:#fbecc4;color:#7a5600}.b.bad{background:#f8d9d1;color:#9a2c16}.b.mut{background:#ece7da;color:#5c6a60}
+.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:700;background:var(--green2);color:#fff;min-height:44px;text-align:center}
+.btn.sec{background:#ece7da;color:var(--ink)}
+.btn.line{background:transparent;border:1px solid #cfc7b5;color:var(--ink)}
+.btn.sm{padding:7px 12px;min-height:34px;font-size:13px;border-radius:10px}
+.btn.block{width:100%}
+.btn:active{transform:scale(.98)}
+input,select{width:100%;padding:12px;border:1px solid #cfc7b5;border-radius:10px;font:inherit;background:#fff;color:var(--ink);min-height:44px}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 5px}
+.row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.row:last-child{border-bottom:0}
+.row .g{flex:1;min-width:0}
+.row .g b{display:block}
+.row .g span{font-size:13px;color:var(--mut)}
+.row .r{text-align:right;font-variant-numeric:tabular-nums}
+.row .r b{display:block}
+.bar{height:8px;background:#e8e2d3;border-radius:99px;overflow:hidden;margin-top:6px}
+.bar>i{display:block;height:100%;background:var(--lime);border-radius:99px}
+.bar.warn>i{background:var(--amber)}.bar.bad>i{background:var(--red)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{border:1px solid #cfc7b5;background:transparent;border-radius:99px;padding:7px 14px;font-weight:700;font-size:13px;color:var(--ink)}
+.chip.on{background:var(--green);border-color:var(--green);color:#fff}
+.linha{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--mut);margin:18px 0 8px}
+.linha:first-of-type{margin-top:4px}
+.baias{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:10px}
+.baia{background:var(--card);border:1px solid var(--line);border-left:6px solid var(--lime);border-radius:14px;padding:11px 12px;cursor:pointer}
+.baia.warn{border-left-color:var(--amber)}.baia.bad{border-left-color:var(--red)}
+.baia .bh{display:flex;justify-content:space-between;align-items:baseline}
+.baia .bh b{font-size:19px;letter-spacing:-.02em}
+.baia .bh span{font-size:12px;color:var(--mut)}
+.baia .bn{font-size:13px;color:var(--mut);margin:2px 0 8px;font-variant-numeric:tabular-nums}
+.baia .bc{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.dots{display:inline-flex;gap:3px}
+.dot{width:12px;height:12px;border-radius:4px;background:#e1dac9}
+.dot.on{background:var(--green2)}
+.modal{position:fixed;inset:0;background:rgba(10,20,14,.55);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+.modal.hidden{display:none}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:93vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom))}
+.sheet .x{float:right;border:0;background:#e8e2d3;width:34px;height:34px;border-radius:50%;font-size:18px;line-height:1}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.kv div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.kv small{display:block;font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.kv b{font-size:16px;font-variant-numeric:tabular-nums}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.esc{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:14px 0 10px}
+.opt{border:2px solid var(--line);background:var(--card);border-radius:14px;padding:12px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.opt b{font-size:26px;line-height:1}
+.opt span{font-weight:800}
+.opt small{font-size:12px;color:var(--mut)}
+.opt.sel{border-color:var(--green2);background:#e9f3e2}
+.big{font-size:34px!important;font-weight:800;text-align:center;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.step{display:grid;grid-template-columns:64px 1fr 64px;gap:8px;align-items:center}
+.chk{display:flex;gap:10px;align-items:center;margin-top:12px;font-size:14px}
+.chk input,input[type=checkbox]{width:22px;height:22px;min-height:0;accent-color:var(--green2)}
+.note{font-size:12.5px;color:var(--mut);margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);text-align:right;padding:6px 6px;border-bottom:1px solid var(--line)}
+td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+.scroll{overflow-x:auto}
+.grid2{display:grid;grid-template-columns:1fr;gap:12px}
+.ing{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.ing:last-child{border-bottom:0}
+.cfgrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom)}
+#tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 7px;font-size:11px;font-weight:700;color:var(--mut)}
+#tabs a.on{color:var(--green2)}
+svg.ic{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#side{display:none}
+#toast{position:fixed;left:50%;top:calc(68px + env(safe-area-inset-top));transform:translateX(-50%) translateY(-16px);background:var(--green);color:#fff;padding:11px 18px;border-radius:12px;font-weight:600;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:80;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.empty{text-align:center;color:var(--mut);padding:24px 8px}
+@media(min-width:700px){
+  .stats{grid-template-columns:repeat(3,1fr)}
+  .grid2{grid-template-columns:1fr 1fr}
+  .modal{align-items:center}.sheet{border-radius:20px}
+}
+@media(min-width:900px){
+  #app{flex-direction:row}
+  #tabs{display:none}
+  #side{display:flex;flex-direction:column;gap:2px;width:228px;flex:none;background:var(--green);color:#e9e4d6;padding:18px 12px;position:sticky;top:0;height:100vh}
+  #side .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px;font-weight:800;font-size:18px;letter-spacing:-.01em}
+  #side .brand img{width:36px;height:36px;border-radius:9px}
+  #side a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;font-weight:600;color:#cfd8cd}
+  #side a:hover{background:rgba(255,255,255,.07)}
+  #side a.on{background:rgba(255,255,255,.14);color:#fff}
+  #top .logo{display:none}
+  #view{padding:22px 28px 40px}
+  .stats{grid-template-columns:repeat(3,1fr)}
+  #toast{top:76px}
+}
+@media(min-width:1100px){.stats.s4{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side"></aside>
+  <div id="main">
+    <header id="top"></header>
+    <section id="view"></section>
+  </div>
+  <nav id="tabs"></nav>
+</div>
+<div id="modal" class="modal hidden"><div class="sheet" id="sheet"></div></div>
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= utilidades ================= */
+const KEY='confinaCerto.v1';
+const $=(s,r)=>(r||document).querySelector(s);
+const fmt=(n,d=0)=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const brl=n=>'R$ '+fmt(n,2);
+const pad=n=>String(n).padStart(2,'0');
+const isoDe=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const hoje=()=>isoDe(new Date());
+const horaAgora=()=>{const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes())};
+const addDias=(iso,n)=>{const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return isoDe(d)};
+const diffDias=(a,b)=>Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/864e5);
+const fmtData=iso=>iso.slice(8,10)+'/'+iso.slice(5,7);
+const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0);
+const wavg=(a,f,w)=>{const t=sum(a,w);return t?sum(a,x=>f(x)*w(x))/t:0};
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const sgn=n=>(n>0?'+':n<0?'−':'')+fmt(Math.abs(n),1)+'%';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+/* ================= dados ================= */
+let S=null;
+const HORARIOS={2:['06:30','15:30'],3:['06:00','11:00','16:00'],4:['06:00','10:30','14:30','17:30']};
+const ESC=[
+  {n:0,t:'Limpo',d:'Cocho raspado, sem sobra',c:'warn'},
+  {n:1,t:'Migalhas',d:'Sobra mínima — ponto ideal',c:'ok'},
+  {n:2,t:'Sobra leve',d:'Ração visível no cocho',c:'warn'},
+  {n:3,t:'Sobra alta',d:'Muita ração, risco de azedar',c:'bad'}
+];
+
+function seed(){
+  const r=rng(42),h=hoje();
+  const S0={
+    v:1,
+    cfg:{fazenda:'Fazenda Demonstração',tratosDia:3,horarios:HORARIOS[3].slice(),ajuste:[3,0,-3,-6],precoArroba:310,custoOp:1.8,rend:54,pesoAbate:540},
+    insumos:[
+      {id:'milho',nome:'Milho grão moído',ms:88,preco:0.95,saldo:82000},
+      {id:'silagem',nome:'Silagem de milho',ms:35,preco:0.22,saldo:120000},
+      {id:'farelo',nome:'Farelo de soja',ms:89,preco:2.10,saldo:6900},
+      {id:'caroco',nome:'Caroço de algodão',ms:90,preco:1.55,saldo:14000},
+      {id:'nucleo',nome:'Núcleo mineral-proteico',ms:95,preco:3.80,saldo:7600},
+      {id:'casca',nome:'Casca de soja',ms:89,preco:0.95,saldo:22000}
+    ],
+    dietas:[
+      {id:'adap',nome:'Adaptação',cons:1.8,ing:[['silagem',55],['milho',25],['farelo',15],['nucleo',5]]},
+      {id:'cresc',nome:'Crescimento',cons:2.2,ing:[['silagem',35],['milho',38],['farelo',12],['casca',10],['nucleo',5]]},
+      {id:'term',nome:'Terminação',cons:2.1,ing:[['silagem',15],['milho',58],['farelo',10],['caroco',10],['nucleo',5],['casca',2]]}
+    ],
+    baias:[],cocho:[],tratos:[],oco:[]
+  };
+  // nome, lote, linha, cab, dias de cocho, peso entrada, GMD, dieta, ajuste
+  const def=[
+    ['B01','L-241A','A',118,92,392,1.62,'term',0],
+    ['B02','L-241A','A',112,92,388,1.58,'term',-3],
+    ['B03','L-241B','A',96,74,405,1.51,'term',0],
+    ['B04','L-241B','A',104,74,410,1.47,'term',3],
+    ['B05','L-241C','A',130,55,398,1.70,'cresc',0],
+    ['B06','L-241C','A',126,55,402,1.66,'cresc',-6],
+    ['B07','L-241D','B',88,41,385,1.35,'cresc',0],
+    ['B08','L-241D','B',92,41,390,1.42,'cresc',-3],
+    ['B09','L-241E','B',140,19,380,1.10,'adap',0],
+    ['B10','L-241E','B',135,19,378,1.05,'adap',0],
+    ['B11','L-241F','B',72,8,395,0.90,'adap',0],
+    ['B12','L-241F','B',70,8,400,0.85,'adap',0]
+  ];
+  def.forEach(x=>{
+    const dataIn=addDias(h,-x[4]);
+    const pes=[{d:dataIn,peso:x[5],n:30}];
+    for(let k=1;dataIn&&addDias(dataIn,28*k)<=addDias(h,-2);k++){
+      pes.push({d:addDias(dataIn,28*k),peso:Math.round(x[5]+x[6]*28*k*(1+(r()-.5)*.04)),n:30});
+    }
+    S0.baias.push({id:x[0].toLowerCase(),nome:x[0],lote:x[1],linha:x[2],cab:x[3],dataIn,pesoIn:x[5],gmdMeta:x[6],dietaId:x[7],ajuste:x[8],pesagens:pes});
+  });
+  S=S0;
+  // leituras de cocho de hoje (4 baias ficam sem leitura de propósito)
+  const escs=[1,2,1,0,1,3,1,2],horas=['06:35','06:41','06:48','06:52','06:58','07:03','07:10','07:16'];
+  escs.forEach((e,i)=>S.cocho.push({dia:h,hora:horas[i],baiaId:S.baias[i].id,escore:e,delta:S.cfg.ajuste[e],aplicado:true,obs:''}));
+  // tratos já lançados hoje
+  const upTo=Math.max(1,tratoAtual()-1);
+  for(let n=1;n<=upTo;n++){
+    S.baias.forEach(b=>{
+      let dv=(r()-.42)*.12; const ext=(n===1&&(b.id==='b05'||b.id==='b07'))||(n===2&&b.id==='b09'); if(ext) dv=(b.id==='b07'?-1:1)*(.09+r()*.03);
+      const prev=previstoTrato(b);
+      S.tratos.push({dia:h,n,baiaId:b.id,prev:Math.round(prev),real:Math.round(prev*(1+dv)),hora:S.cfg.horarios[n-1]});
+    });
+  }
+  S.oco.push({dia:addDias(h,-1),hora:'15:20',baiaId:'b03',tipo:'Tratamento',qtd:2,obs:'Pneumonia — oxitetraciclina'});
+  S.oco.push({dia:addDias(h,-2),hora:'08:05',baiaId:'b05',tipo:'Morte',qtd:1,obs:'Timpanismo'});
+  return S;
+}
+function load(){
+  try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);if(o&&o.v===1&&o.baias&&o.cfg){S=o;return}}}catch(e){}
+  seed();save();
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+/* ================= cálculos ================= */
+const baia=id=>S.baias.find(b=>b.id===id);
+const insumo=id=>S.insumos.find(i=>i.id===id);
+const dieta=id=>S.dietas.find(d=>d.id===id);
+function dietaCalc(d){
+  let mn=0,custo=0;
+  d.ing.forEach(([id,p])=>{const i=insumo(id);mn+=p/i.ms;custo+=p*i.preco/i.ms});
+  return {mnPorMS:mn,custoMS:custo,parts:d.ing.map(([id,p])=>({id,pct:p,share:(p/insumo(id).ms)/mn}))};
+}
+function gmdBaia(b){
+  const p=b.pesagens;
+  if(p.length>=2){const dd=diffDias(p[0].d,p[p.length-1].d);if(dd>0)return (p[p.length-1].peso-p[0].peso)/dd}
+  return b.gmdMeta;
+}
+const gmdEstimado=b=>b.pesagens.length<2;
+function pesoAtual(b){const l=b.pesagens[b.pesagens.length-1];return l.peso+gmdBaia(b)*Math.max(0,diffDias(l.d,hoje()))}
+const diasCocho=b=>diffDias(b.dataIn,hoje());
+function fechamento(b){
+  const dias=Math.max(0,Math.ceil((S.cfg.pesoAbate-pesoAtual(b))/Math.max(gmdBaia(b),.1)));
+  return {dias,data:addDias(hoje(),dias)};
+}
+const consumoMS=b=>pesoAtual(b)*dieta(b.dietaId).cons/100*(1+b.ajuste/100);
+const previstoDia=b=>consumoMS(b)*dietaCalc(dieta(b.dietaId)).mnPorMS*b.cab;
+const previstoTrato=b=>previstoDia(b)/S.cfg.tratosDia;
+const custoDiaCab=b=>consumoMS(b)*dietaCalc(dieta(b.dietaId)).custoMS+S.cfg.custoOp;
+const arrobaDia=b=>gmdBaia(b)*S.cfg.rend/100/15;
+const custoArroba=b=>{const a=arrobaDia(b);return a>0?custoDiaCab(b)/a:0};
+const conversao=b=>consumoMS(b)/Math.max(gmdBaia(b),.1);
+function tratoAtual(){
+  const hs=S.cfg.horarios,now=horaAgora();let n=1;
+  hs.forEach((h,i)=>{if(h<=now)n=i+1});return n;
+}
+const ultimoCocho=b=>{const l=S.cocho.filter(c=>c.baiaId===b.id&&c.dia===hoje());return l.length?l[l.length-1]:null};
+const tratoRec=(b,n)=>S.tratos.find(t=>t.dia===hoje()&&t.n===n&&t.baiaId===b.id);
+function statusBaia(b){
+  const lc=ultimoCocho(b),trs=S.tratos.filter(t=>t.dia===hoje()&&t.baiaId===b.id);
+  const dev=trs.length?Math.max(...trs.map(t=>Math.abs(t.real/t.prev-1)*100)):0;
+  let st='ok';const m=[];
+  if(!lc){st='warn';m.push('Sem leitura de cocho hoje')}
+  else if(lc.escore===3){st='bad';m.push('Sobra alta no cocho')}
+  else if(lc.escore===0){st='warn';m.push('Cocho limpo — avaliar aumento')}
+  if(dev>8){st='bad';m.push('Desvio de trato de '+fmt(dev,1)+'%')}
+  else if(dev>5){if(st==='ok')st='warn';m.push('Desvio de trato de '+fmt(dev,1)+'%')}
+  return {st,m,lc,trs,dev};
+}
+function consumoInsumos(){
+  const m={};
+  S.baias.forEach(b=>{const t=previstoDia(b);dietaCalc(dieta(b.dietaId)).parts.forEach(p=>{m[p.id]=(m[p.id]||0)+t*p.share})});
+  return m;
+}
+function baixaEstoque(b,deltaKg){
+  dietaCalc(dieta(b.dietaId)).parts.forEach(p=>{const i=insumo(p.id);i.saldo=Math.max(0,i.saldo-deltaKg*p.share)});
+}
+function alertas(){
+  const a=[],h=hoje();
+  const sem=S.baias.filter(b=>!ultimoCocho(b));
+  if(sem.length)a.push({t:'warn',x:sem.length+' baia'+(sem.length>1?'s':'')+' sem leitura de cocho hoje ('+sem.map(b=>b.nome).join(', ')+')',go:'cocho'});
+  const n=tratoAtual(),pend=S.baias.filter(b=>!tratoRec(b,n));
+  if(pend.length)a.push({t:'warn',x:'Trato '+n+' ('+S.cfg.horarios[n-1]+') pendente em '+pend.length+' baia'+(pend.length>1?'s':''),go:'trato'});
+  const dv=S.tratos.filter(t=>t.dia===h&&Math.abs(t.real/t.prev-1)>.08);
+  if(dv.length)a.push({t:'bad',x:dv.length+' trato'+(dv.length>1?'s':'')+' com desvio acima de 8% do previsto hoje',go:'trato'});
+  const cons=consumoInsumos();
+  S.insumos.forEach(i=>{const d=i.saldo/(cons[i.id]||1e-6);
+    if(d<5)a.push({t:'bad',x:i.nome+': estoque para só '+fmt(d,1)+' dias',go:'estoque'});
+    else if(d<10)a.push({t:'warn',x:i.nome+': estoque para '+fmt(d,0)+' dias',go:'estoque'})});
+  const pr=S.baias.filter(b=>fechamento(b).dias<=3);
+  if(pr.length)a.push({t:'ok',x:pr.map(b=>b.nome).join(', ')+' no ponto de abate (peso alvo '+S.cfg.pesoAbate+' kg)',go:'pesagem'});
+  return a;
+}
+
+/* ================= interface base ================= */
+const IC={
+ painel:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+ mapa:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+ trato:'<path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/>',
+ cocho:'<path d="M3 10h18l-2 8H5l-2-8Z"/><path d="M7 10c0-3 2-5 5-5s5 2 5 5"/>',
+ pesagem:'<path d="M5 20h14M12 4v16M5 8h14"/><path d="m5 8-2 6a3 3 0 0 0 4 0L5 8Zm14 0-2 6a3 3 0 0 0 4 0l-2-6Z"/>',
+ estoque:'<path d="M3 7l9-4 9 4v10l-9 4-9-4V7Z"/><path d="m3 7 9 4 9-4M12 11v10"/>',
+ custos:'<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1 1-1.8 2.5-1.8s2.5.8 2.5 1.8-1 1.6-2.5 2-2.5 1-2.5 2 1 1.8 2.5 1.8 2.5-.8 2.5-1.8"/>',
+ dietas:'<path d="M9 3h6M10 3v6L5 19a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-10V3"/>',
+ config:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+ mais:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>'
+};
+const ico=n=>'<svg class="ic" viewBox="0 0 24 24">'+IC[n]+'</svg>';
+const NAV=[['painel','Painel'],['mapa','Baias'],['trato','Trato'],['cocho','Cocho'],['pesagem','Pesagem'],['estoque','Estoque'],['custos','Custos'],['dietas','Dietas'],['config','Ajustes']];
+const TABS=[['painel','Painel'],['mapa','Baias'],['trato','Trato'],['cocho','Cocho'],['mais','Mais']];
+const TITULOS={painel:'Painel',mapa:'Mapa de baias',trato:'Trato',cocho:'Leitura de cocho',pesagem:'Pesagem',estoque:'Estoque de insumos',custos:'Custos e resultado',dietas:'Dietas',config:'Ajustes',mais:'Mais'};
+let view='painel',filtro='todas',tratoSel=1,deferredInstall=null;
+
+function chrome(){
+  $('#side').innerHTML='<div class="brand"><img src="icon-192.png" alt="">Confina Certo</div>'+NAV.map(([id,t])=>'<a href="#'+id+'" class="'+(view===id?'on':'')+'">'+ico(id)+t+'</a>').join('');
+  $('#tabs').innerHTML=TABS.map(([id,t])=>{const on=view===id||(id==='mais'&&['pesagem','estoque','custos','dietas','config'].includes(view));return '<a href="#'+id+'" class="'+(on?'on':'')+'">'+ico(id)+t+'</a>'}).join('');
+  $('#top').innerHTML='<img class="logo" src="icon-192.png" alt=""><div><h1>'+esc(TITULOS[view]||'')+'</h1><small>'+esc(S.cfg.fazenda)+'</small></div><div class="sp"></div><div class="net'+(navigator.onLine?'':' off')+'"><i></i>'+(navigator.onLine?'Online':'Offline · salvo no aparelho')+'</div>';
+}
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2600)}
+function sheet(html){$('#sheet').innerHTML='<button class="x" data-act="close" aria-label="Fechar">×</button>'+html;$('#modal').classList.remove('hidden')}
+function closeModal(){$('#modal').classList.add('hidden');$('#sheet').innerHTML=''}
+function badgeDev(p){const a=Math.abs(p);return '<span class="b '+(a<=3?'ok':a<=8?'warn':'bad')+'">'+sgn(p)+'</span>'}
+function escBadge(e){return '<span class="b '+ESC[e].c+'">'+e+' · '+ESC[e].t+'</span>'}
+
+/* ================= telas ================= */
+const VIEWS={};
+
+VIEWS.painel=()=>{
+  const bs=S.baias,cab=sum(bs,b=>b.cab);
+  const gmd=wavg(bs,gmdBaia,b=>b.cab),ca=wavg(bs,custoArroba,b=>b.cab),marg=S.cfg.precoArroba-ca;
+  const feitos=S.tratos.filter(t=>t.dia===hoje());
+  const dev=feitos.length?(sum(feitos,t=>t.real)/sum(feitos,t=>t.prev)-1)*100:0;
+  const tot=bs.length*S.cfg.tratosDia;
+  const al=alertas();
+  const prox=bs.slice().sort((a,b)=>fechamento(a).dias-fechamento(b).dias).slice(0,6);
+  return '<div class="stats">'
+   +'<div class="stat"><div class="l">Cabeças no cocho</div><div class="v">'+fmt(cab)+'</div><div class="s">'+bs.length+' baias</div></div>'
+   +'<div class="stat"><div class="l">GMD médio</div><div class="v">'+fmt(gmd,2)+' <small>kg/dia</small></div><div class="s">ponderado por cabeça</div></div>'
+   +'<div class="stat"><div class="l">Custo da @ produzida</div><div class="v">'+brl(ca)+'</div><div class="s">dieta + operação</div></div>'
+   +'<div class="stat '+(marg>=0?'good':'badv')+'"><div class="l">Margem por @ ganha</div><div class="v">'+brl(marg)+'</div><div class="s">@ a '+brl(S.cfg.precoArroba)+'</div></div>'
+   +'<div class="stat"><div class="l">Tratos hoje</div><div class="v">'+feitos.length+'<small>/'+tot+'</small></div><div class="s">desvio médio '+sgn(dev)+' do previsto</div></div>'
+   +'<div class="stat"><div class="l">Previsto hoje</div><div class="v">'+fmt(sum(bs,previstoDia)/1000,1)+' <small>t MN</small></div><div class="s">ração total do dia</div></div>'
+   +'</div>'
+   +'<div class="grid2" style="margin-top:12px"><div class="card"><h3>Atenção hoje</h3>'
+   +(al.length?al.map(a=>'<div class="row" data-act="go" data-v="'+a.go+'"><span class="b '+a.t+'">'+(a.t==='ok'?'Info':a.t==='warn'?'Atenção':'Urgente')+'</span><div class="g"><span style="color:var(--ink)">'+esc(a.x)+'</span></div></div>').join(''):'<div class="empty">Tudo em ordem por aqui.</div>')
+   +'</div><div class="card"><h3>Próximas saídas</h3>'
+   +prox.map(b=>{const f=fechamento(b);return '<div class="row" data-act="baia" data-id="'+b.id+'"><div class="g"><b>'+b.nome+' <span>· '+b.lote+'</span></b><span>'+b.cab+' cab · '+fmt(pesoAtual(b))+' kg est.</span></div><div class="r"><b>'+(f.dias===0?'Hoje':fmtData(f.data))+'</b><span class="b '+(f.dias<=3?'ok':'mut')+'">'+(f.dias===0?'no peso':'em '+f.dias+' d')+'</span></div></div>'}).join('')
+   +'</div></div>';
+};
+
+VIEWS.mapa=()=>{
+  const lista=S.baias.filter(b=>filtro==='todas'||(filtro==='att'&&statusBaia(b).st!=='ok')||(filtro==='fech'&&fechamento(b).dias<=10));
+  const linhas=[...new Set(S.baias.map(b=>b.linha))];
+  let h='<div class="chips">'+[['todas','Todas'],['att','Com atenção'],['fech','Saindo em 10 dias']].map(([k,t])=>'<button class="chip '+(filtro===k?'on':'')+'" data-act="filtro" data-f="'+k+'">'+t+'</button>').join('')+'</div>';
+  if(!lista.length)return h+'<div class="card empty">Nenhuma baia neste filtro.</div>';
+  linhas.forEach(l=>{
+    const bs=lista.filter(b=>b.linha===l);if(!bs.length)return;
+    h+='<div class="linha">Linha '+l+' · '+sum(bs,b=>b.cab)+' cab</div><div class="baias">'+bs.map(b=>{
+      const s=statusBaia(b),f=fechamento(b);
+      return '<div class="baia '+s.st+'" data-act="baia" data-id="'+b.id+'"><div class="bh"><b>'+b.nome+'</b><span>'+b.lote+'</span></div>'
+       +'<div class="bn">'+b.cab+' cab · '+fmt(pesoAtual(b))+' kg</div><div class="bc">'
+       +(s.lc?escBadge(s.lc.escore):'<span class="b warn">sem leitura</span>')
+       +'<span class="dots">'+Array.from({length:S.cfg.tratosDia},(_,i)=>'<i class="dot '+(tratoRec(b,i+1)?'on':'')+'"></i>').join('')+'</span>'
+       +(f.dias<=10?'<span class="b ok">abate '+(f.dias===0?'hoje':f.dias+'d')+'</span>':'')
+       +'</div></div>';
+    }).join('')+'</div>';
+  });
+  return h;
+};
+
+VIEWS.trato=()=>{
+  const n=tratoSel,bs=S.baias;
+  const rec=bs.map(b=>tratoRec(b,n)),feitos=rec.filter(Boolean);
+  const prevTot=sum(bs,previstoTrato)/1000,realTot=sum(feitos,t=>t.real)/1000;
+  const dev=feitos.length?(sum(feitos,t=>t.real)/sum(feitos,t=>t.prev)-1)*100:0;
+  let h='<div class="chips">'+S.cfg.horarios.map((hh,i)=>'<button class="chip '+(tratoSel===i+1?'on':'')+'" data-act="tratoSel" data-n="'+(i+1)+'">'+(i+1)+'º trato · '+hh+'</button>').join('')+'</div>'
+   +'<div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3>'+feitos.length+' de '+bs.length+' baias</h3><span class="mut">previsto '+fmt(prevTot,1)+' t · lançado '+fmt(realTot,1)+' t'+(feitos.length?' · '+sgn(dev):'')+'</span></div>'
+   +'<div class="bar"><i style="width:'+(feitos.length/bs.length*100)+'%"></i></div></div><div class="card" style="padding:4px 14px">';
+  bs.forEach((b,i)=>{
+    const r=rec[i];
+    h+='<div class="row" data-act="trato" data-id="'+b.id+'" data-n="'+n+'"><div class="g"><b>'+b.nome+' <span>· '+dieta(b.dietaId).nome+' · '+b.cab+' cab</span></b><span>'
+     +fmt(previstoTrato(b)/b.cab,1)+' kg/cab previsto'+(b.ajuste?' · ajuste '+(b.ajuste>0?'+':'−')+Math.abs(b.ajuste)+'%':'')+'</span></div><div class="r">'
+     +(r?'<b>'+fmt(r.real)+' kg</b>'+badgeDev((r.real/r.prev-1)*100):'<b>'+fmt(previstoTrato(b))+' kg</b><span class="b mut">pendente</span>')+'</div></div>';
+  });
+  return h+'</div><p class="note">Ao lançar o trato, o estoque dos insumos é baixado automaticamente pela proporção da dieta.</p>';
+};
+
+VIEWS.cocho=()=>{
+  const bs=S.baias,lidos=bs.filter(ultimoCocho);
+  const dist=[0,1,2,3].map(e=>lidos.filter(b=>ultimoCocho(b).escore===e).length);
+  let h='<div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3>'+lidos.length+' de '+bs.length+' baias lidas hoje</h3></div><div class="bar"><i style="width:'+(lidos.length/bs.length*100)+'%"></i></div>'
+   +'<div class="chips" style="margin:12px 0 0">'+dist.map((q,e)=>'<span class="b '+ESC[e].c+'">'+q+' × '+ESC[e].t+'</span>').join('')+'</div></div>'
+   +'<div class="card" style="padding:4px 14px">';
+  bs.forEach(b=>{
+    const lc=ultimoCocho(b);
+    h+='<div class="row" data-act="cocho" data-id="'+b.id+'"><div class="g"><b>'+b.nome+' <span>· '+b.lote+'</span></b><span>'+(lc?'lido às '+lc.hora:'ainda sem leitura')+' · ajuste atual '+(b.ajuste>0?'+':b.ajuste<0?'−':'')+Math.abs(b.ajuste)+'%</span></div><div class="r">'+(lc?escBadge(lc.escore):'<span class="b warn">pendente</span>')+'</div></div>';
+  });
+  return h+'</div><p class="note">A leitura ajusta o plano de trato: cocho limpo aumenta, sobra reduz. Os passos de ajuste são configuráveis em Ajustes.</p>';
+};
+
+VIEWS.pesagem=()=>{
+  let h='<div class="card" style="padding:4px 14px">';
+  S.baias.forEach(b=>{
+    const l=b.pesagens[b.pesagens.length-1],f=fechamento(b);
+    h+='<div class="row" data-act="pesar" data-id="'+b.id+'"><div class="g"><b>'+b.nome+' <span>· '+b.lote+' · '+diasCocho(b)+' dias</span></b><span>última pesagem '+fmtData(l.d)+': '+fmt(l.peso)+' kg · GMD '+fmt(gmdBaia(b),2)+(gmdEstimado(b)?' (meta)':'')+'</span></div>'
+     +'<div class="r"><b>'+fmt(pesoAtual(b))+' kg</b><span class="b '+(f.dias<=3?'ok':'mut')+'">'+(f.dias===0?'no peso':'abate '+fmtData(f.data))+'</span></div></div>';
+  });
+  return h+'</div><p class="note">Peso atual é estimado a partir da última pesagem e do GMD. Alvo de abate: '+S.cfg.pesoAbate+' kg (ajustável em Custos).</p>';
+};
+
+VIEWS.estoque=()=>{
+  const cons=consumoInsumos();
+  let h='<div class="card" style="padding:4px 14px">';
+  S.insumos.forEach(i=>{
+    const c=cons[i.id]||0,d=c?i.saldo/c:999,cl=d<5?'bad':d<10?'warn':'';
+    h+='<div class="row" data-act="entrada" data-id="'+i.id+'"><div class="g"><b>'+i.nome+'</b><span>consumo '+fmt(c/1000,2)+' t/dia · '+brl(i.preco)+'/kg MN · MS '+i.ms+'%</span><div class="bar '+cl+'"><i style="width:'+clamp(d/30*100,3,100)+'%"></i></div></div>'
+     +'<div class="r"><b>'+fmt(i.saldo/1000,1)+' t</b><span class="b '+(cl||'ok')+'">'+(d>=999?'—':fmt(d,0)+' dias')+'</span></div></div>';
+  });
+  return h+'</div><p class="note">Toque em um insumo para lançar entrada de carga. A barra mostra os dias de estoque (cheia = 30 dias ou mais).</p>';
+};
+
+VIEWS.custos=()=>{
+  const bs=S.baias,ca=wavg(bs,custoArroba,b=>b.cab),marg=S.cfg.precoArroba-ca;
+  const cd=wavg(bs,custoDiaCab,b=>b.cab),cv=wavg(bs,conversao,b=>b.cab);
+  let h='<div class="stats s4"><div class="stat"><div class="l">Custo da @ produzida</div><div class="v">'+brl(ca)+'</div></div>'
+   +'<div class="stat '+(marg>=0?'good':'badv')+'"><div class="l">Margem por @ ganha</div><div class="v">'+brl(marg)+'</div></div>'
+   +'<div class="stat"><div class="l">Custo/cab/dia</div><div class="v">'+brl(cd)+'</div></div>'
+   +'<div class="stat"><div class="l">Conversão alimentar</div><div class="v">'+fmt(cv,1)+' <small>kg MS/kg</small></div></div></div>'
+   +'<div class="card"><h3>Parâmetros</h3><div class="cfgrow">'
+   +'<div><label>Preço da @ (R$)</label><input type="number" inputmode="decimal" step="1" value="'+S.cfg.precoArroba+'" data-cfg="precoArroba"></div>'
+   +'<div><label>Custo operacional (R$/cab/dia)</label><input type="number" inputmode="decimal" step="0.1" value="'+S.cfg.custoOp+'" data-cfg="custoOp"></div>'
+   +'<div><label>Rendimento de carcaça (%)</label><input type="number" inputmode="decimal" step="0.5" value="'+S.cfg.rend+'" data-cfg="rend"></div>'
+   +'<div><label>Peso de abate (kg vivo)</label><input type="number" inputmode="numeric" step="5" value="'+S.cfg.pesoAbate+'" data-cfg="pesoAbate"></div></div>'
+   +'<p class="note">Custo da @ produzida = (dieta + operação por dia) ÷ @ de carcaça ganha por dia. Não inclui o custo do boi magro.</p></div>'
+   +'<div class="card"><h3>Por baia</h3><div class="scroll"><table><thead><tr><th>Baia</th><th>GMD</th><th>CA</th><th>R$/cab/dia</th><th>R$/@</th><th>Margem/@</th></tr></thead><tbody>';
+  bs.forEach(b=>{
+    const c=custoArroba(b),m=S.cfg.precoArroba-c;
+    h+='<tr data-act="baia" data-id="'+b.id+'" style="cursor:pointer"><td><b>'+b.nome+'</b></td><td>'+fmt(gmdBaia(b),2)+'</td><td>'+fmt(conversao(b),1)+'</td><td>'+fmt(custoDiaCab(b),2)+'</td><td>'+fmt(c,0)+'</td><td><span class="b '+(m>=40?'ok':m>=0?'warn':'bad')+'">'+fmt(m,0)+'</span></td></tr>';
+  });
+  return h+'</tbody></table></div></div>';
+};
+
+VIEWS.dietas=()=>{
+  let h='<div class="grid2">';
+  S.dietas.forEach(d=>{
+    const c=dietaCalc(d),usa=S.baias.filter(b=>b.dietaId===d.id);
+    h+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3>'+d.nome+'</h3><span class="mut">'+fmt(d.cons,1)+'% do PV em MS</span></div>'
+     +'<div class="kv"><div><small>R$/kg MS</small><b>'+fmt(c.custoMS,2)+'</b></div><div><small>R$/kg MN</small><b>'+fmt(c.custoMS/c.mnPorMS,2)+'</b></div><div><small>Baias</small><b>'+usa.length+'</b></div></div>';
+    c.parts.forEach(p=>{h+='<div class="ing"><span>'+insumo(p.id).nome+'</span><span><b>'+p.pct+'%</b> MS <span class="mut">· '+fmt(p.share*100,1)+'% MN</span></span></div>'});
+    h+='<p class="note">'+(usa.length?'Usada em: '+usa.map(b=>b.nome).join(', '):'Nenhuma baia usando.')+'</p></div>';
+  });
+  return h+'</div>';
+};
+
+VIEWS.mais=()=>{
+  const it=[['pesagem','Pesagem','Pesos, GMD e previsão de saída'],['estoque','Estoque','Silagem, milho, farelo e demais insumos'],['custos','Custos','Custo da @, margem e conversão'],['dietas','Dietas','Composição e custo por dieta'],['config','Ajustes','Tratos, ajustes de cocho, backup']];
+  return '<div class="card" style="padding:4px 14px">'+it.map(([id,t,d])=>'<a class="row" href="#'+id+'">'+ico(id)+'<div class="g"><b>'+t+'</b><span>'+d+'</span></div></a>').join('')+'</div>';
+};
+
+VIEWS.config=()=>{
+  const c=S.cfg;
+  return '<div class="card"><h3>Fazenda</h3><label>Nome</label><input value="'+esc(c.fazenda)+'" data-cfg="fazenda">'
+   +'<label>Tratos por dia</label><select data-cfg="tratosDia">'+[2,3,4].map(n=>'<option '+(c.tratosDia===n?'selected':'')+'>'+n+'</option>').join('')+'</select>'
+   +'<label>Horários dos tratos</label><div class="cfgrow">'+c.horarios.map((h,i)=>'<input type="time" value="'+h+'" data-cfg="hor'+i+'">').join('')+'</div></div>'
+   +'<div class="card"><h3>Ajuste de trato por leitura de cocho</h3><p class="note" style="margin:4px 0 8px">Quanto o trato muda (%) a cada escore lido.</p><div class="cfgrow">'
+   +ESC.map((e,i)=>'<div><label>'+e.n+' · '+e.t+'</label><input type="number" step="1" value="'+c.ajuste[i]+'" data-cfg="aj'+i+'"></div>').join('')+'</div></div>'
+   +'<div class="card"><h3>Dados</h3><p class="note" style="margin:4px 0 12px">Esta versão de demonstração guarda tudo no próprio aparelho (funciona sem internet).</p>'
+   +'<div class="acts"><button class="btn sec" data-act="export">Exportar dados</button><button class="btn sec" data-act="reset">Restaurar demonstração</button>'
+   +(deferredInstall?'<button class="btn" data-act="install" style="grid-column:1/-1">Instalar aplicativo</button>':'')+'</div></div>';
+};
+
+/* ================= modais ================= */
+function spark(b){
+  const p=b.pesagens,w=300,h=96,pd=10,d0=p[0].d,f=fechamento(b);
+  const xs=p.map(q=>diffDias(d0,q.d)),xT=diffDias(d0,hoje())+f.dias;
+  const xmax=Math.max(xT,xs[xs.length-1]+1);
+  const ymin=Math.min(...p.map(q=>q.peso))-12,ymax=Math.max(S.cfg.pesoAbate,...p.map(q=>q.peso))+12;
+  const X=x=>pd+(x/xmax)*(w-2*pd),Y=y=>h-pd-((y-ymin)/(ymax-ymin))*(h-2*pd);
+  const last=p[p.length-1];
+  return '<svg viewBox="0 0 '+w+' '+h+'" width="100%" style="display:block"><line x1="'+pd+'" x2="'+(w-pd)+'" y1="'+Y(S.cfg.pesoAbate)+'" y2="'+Y(S.cfg.pesoAbate)+'" stroke="#c9c1ae" stroke-dasharray="4 4"/>'
+   +'<text x="'+(w-pd)+'" y="'+(Y(S.cfg.pesoAbate)-4)+'" text-anchor="end" font-size="10" fill="#66756b">meta '+S.cfg.pesoAbate+' kg</text>'
+   +'<path d="M'+X(xs[xs.length-1])+','+Y(last.peso)+' L'+X(xT)+','+Y(S.cfg.pesoAbate)+'" stroke="#e0a526" stroke-width="2" stroke-dasharray="5 4" fill="none"/>'
+   +'<polyline points="'+p.map((q,i)=>X(xs[i])+','+Y(q.peso)).join(' ')+'" fill="none" stroke="#1f6a42" stroke-width="2.5"/>'
+   +p.map((q,i)=>'<circle cx="'+X(xs[i])+'" cy="'+Y(q.peso)+'" r="3.5" fill="#1f6a42"/>').join('')+'</svg>';
+}
+
+function mBaia(id){
+  const b=baia(id),s=statusBaia(b),f=fechamento(b),d=dieta(b.dietaId);
+  const oco=S.oco.filter(o=>o.baiaId===id).slice(-3).reverse();
+  sheet('<h2>'+b.nome+' <span class="mut" style="font-size:15px;font-weight:600">· '+b.lote+' · linha '+b.linha+'</span></h2>'
+   +'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+(s.m.length?s.m.map(x=>'<span class="b '+s.st+'">'+esc(x)+'</span>').join(''):'<span class="b ok">Sem pendências</span>')+'</div>'
+   +'<div class="kv"><div><small>Cabeças</small><b>'+b.cab+'</b></div><div><small>Dias no cocho</small><b>'+diasCocho(b)+'</b></div><div><small>Peso atual est.</small><b>'+fmt(pesoAtual(b))+' kg</b></div>'
+   +'<div><small>GMD'+(gmdEstimado(b)?' (meta)':'')+'</small><b>'+fmt(gmdBaia(b),2)+'</b></div><div><small>Conversão</small><b>'+fmt(conversao(b),1)+'</b></div><div><small>Custo da @</small><b>R$ '+fmt(custoArroba(b),0)+'</b></div>'
+   +'<div><small>Dieta</small><b style="font-size:14px">'+d.nome+'</b></div><div><small>Previsto/dia</small><b>'+fmt(previstoDia(b))+' kg</b></div><div><small>Saída prevista</small><b>'+(f.dias===0?'Hoje':fmtData(f.data))+'</b></div></div>'
+   +'<div class="card" style="padding:10px">'+spark(b)+'</div>'
+   +'<div class="acts"><button class="btn" data-act="cocho" data-id="'+id+'">Leitura de cocho</button><button class="btn" data-act="trato" data-id="'+id+'" data-n="'+tratoSel+'">Lançar trato '+tratoSel+'</button>'
+   +'<button class="btn sec" data-act="pesar" data-id="'+id+'">Pesar</button><button class="btn sec" data-act="oco" data-id="'+id+'">Ocorrência</button></div>'
+   +(oco.length?'<h3 style="margin-top:16px">Ocorrências recentes</h3>'+oco.map(o=>'<div class="row" style="cursor:default"><div class="g"><b>'+o.tipo+' · '+o.qtd+' cab</b><span>'+fmtData(o.dia)+' '+o.hora+(o.obs?' · '+esc(o.obs):'')+'</span></div></div>').join(''):''));
+}
+
+let M={};
+function mCocho(id){
+  const b=baia(id),lc=ultimoCocho(b);
+  M={t:'cocho',id,esc:lc?lc.escore:1};
+  sheet('<h2>Leitura de cocho · '+b.nome+'</h2><p class="mut">'+b.lote+' · '+b.cab+' cab</p>'
+   +'<div class="esc">'+ESC.map(e=>'<button type="button" class="opt '+(e.n===M.esc?'sel':'')+'" data-act="escSel" data-n="'+e.n+'"><b>'+e.n+'</b><span>'+e.t+'</span><small>'+e.d+'</small></button>').join('')+'</div>'
+   +'<form data-form="cocho"><div class="card" id="escInfo"></div><label class="chk" style="text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink);font-weight:600"><input type="checkbox" id="ck-apl" checked> Aplicar ajuste no plano de trato</label>'
+   +'<label>Observação</label><input id="ck-obs" placeholder="Ex.: cocho molhado, chuva à noite" autocomplete="off"><button class="btn block" style="margin-top:16px">Salvar leitura</button></form>');
+  updEsc();
+}
+function updEsc(){
+  const b=baia(M.id),el=$('#escInfo');if(!el)return;
+  const dl=S.cfg.ajuste[M.esc],lc=ultimoCocho(b);
+  const base=b.ajuste-(lc&&lc.aplicado?lc.delta:0),novo=clamp(base+dl,-20,20);
+  el.innerHTML='<b>Ajuste sugerido: '+(dl>0?'+':dl<0?'−':'')+Math.abs(dl)+'% no trato</b><div class="mut" style="font-size:13px">Plano passa de '+(b.ajuste>0?'+':b.ajuste<0?'−':'')+Math.abs(b.ajuste)+'% para '+(novo>0?'+':novo<0?'−':'')+Math.abs(novo)+'% · '+fmt(previstoDia(b)*(1+novo/100)/(1+b.ajuste/100))+' kg MN/dia</div>';
+}
+function mTrato(id,n){
+  const b=baia(id),rec=tratoRec(b,n),prev=rec?rec.prev:Math.round(previstoTrato(b));
+  M={t:'trato',id,n,prev};
+  sheet('<h2>Trato '+n+' · '+b.nome+'</h2><p class="mut">'+dieta(b.dietaId).nome+' · '+b.cab+' cab · '+S.cfg.horarios[n-1]+(rec?' · editando lançamento':'')+'</p>'
+   +'<div class="card" style="margin-top:12px;text-align:center"><span class="mut">Previsto</span><div class="big" style="font-size:26px!important">'+fmt(prev)+' kg</div></div>'
+   +'<form data-form="trato"><label>Fornecido (kg de matéria natural)</label><div class="step"><button type="button" class="btn sec" data-act="step" data-d="-50">−50</button><input id="tr-real" class="big" type="number" inputmode="numeric" value="'+(rec?rec.real:prev)+'"><button type="button" class="btn sec" data-act="step" data-d="50">+50</button></div>'
+   +'<div id="trDev" style="text-align:center;margin-top:10px"></div><button class="btn block" style="margin-top:14px">Confirmar trato</button></form>');
+  updDev();
+}
+function updDev(){
+  const v=+$('#tr-real').value||0,el=$('#trDev');if(!el)return;
+  el.innerHTML=badgeDev((v/M.prev-1)*100)+' <span class="mut">'+fmt(v/baia(M.id).cab,1)+' kg/cab</span>';
+}
+function mPesar(id){
+  const b=baia(id);M={t:'pesar',id};
+  sheet('<h2>Pesagem · '+b.nome+'</h2><p class="mut">Última: '+fmtData(b.pesagens[b.pesagens.length-1].d)+' · '+fmt(b.pesagens[b.pesagens.length-1].peso)+' kg</p>'
+   +'<form data-form="pesar"><label>Data</label><input type="date" id="ps-d" value="'+hoje()+'" max="'+hoje()+'">'
+   +'<div class="cfgrow"><div><label>Peso médio (kg)</label><input id="ps-p" type="number" inputmode="decimal" step="0.1" placeholder="Ex.: 482" required></div><div><label>Animais pesados</label><input id="ps-n" type="number" inputmode="numeric" value="'+Math.min(b.cab,30)+'"></div></div>'
+   +'<div class="card" id="psInfo" style="margin-top:12px"><span class="mut">Informe o peso para ver GMD e previsão de saída.</span></div><button class="btn block" style="margin-top:14px">Salvar pesagem</button></form>');
+}
+function updPes(){
+  const b=baia(M.id),p=+$('#ps-p').value,d=$('#ps-d').value,el=$('#psInfo');if(!p||!d)return;
+  const dd=diffDias(b.pesagens[0].d,d),g=dd>0?(p-b.pesagens[0].peso)/dd:0;
+  const dias=g>0?Math.max(0,Math.ceil((S.cfg.pesoAbate-p)/g)):null;
+  el.innerHTML='<b>GMD desde a entrada: '+fmt(g,2)+' kg/dia</b><div class="mut" style="font-size:13px">'+(dias===null?'—':'Atinge '+S.cfg.pesoAbate+' kg em ~'+dias+' dias ('+fmtData(addDias(d,dias))+')')+'</div>';
+}
+function mOco(id){
+  const b=baia(id);M={t:'oco',id};
+  sheet('<h2>Ocorrência · '+b.nome+'</h2><form data-form="oco"><label>Tipo</label><select id="oc-t"><option>Tratamento</option><option>Morte</option><option>Movimentação</option></select>'
+   +'<label>Quantidade de animais</label><input id="oc-q" type="number" inputmode="numeric" min="1" max="'+b.cab+'" value="1">'
+   +'<div id="oc-dest" style="display:none"><label>Baia de destino</label><select id="oc-b">'+S.baias.filter(x=>x.id!==id).map(x=>'<option value="'+x.id+'">'+x.nome+' · '+x.lote+'</option>').join('')+'</select></div>'
+   +'<label>Observação</label><input id="oc-o" placeholder="Ex.: claudicação, diarreia" autocomplete="off"><button class="btn block" style="margin-top:16px">Registrar</button></form>');
+}
+function mEntrada(id){
+  const i=insumo(id);M={t:'ent',id};
+  sheet('<h2>Entrada · '+i.nome+'</h2><p class="mut">Saldo atual: '+fmt(i.saldo)+' kg</p><form data-form="ent"><label>Quantidade recebida (kg)</label><input id="en-q" type="number" inputmode="numeric" placeholder="Ex.: 28000" required>'
+   +'<label>Preço (R$/kg MN)</label><input id="en-p" type="number" inputmode="decimal" step="0.01" value="'+i.preco+'"><p class="note">Se o preço mudar, os custos da dieta são recalculados.</p><button class="btn block" style="margin-top:14px">Lançar entrada</button></form>');
+}
+
+/* ================= ações ================= */
+function rerender(){render(false)}
+const ACT={
+  close:()=>closeModal(),
+  go:d=>{location.hash='#'+d.v},
+  filtro:d=>{filtro=d.f;rerender()},
+  tratoSel:d=>{tratoSel=+d.n;rerender()},
+  baia:d=>mBaia(d.id),
+  cocho:d=>mCocho(d.id),
+  trato:d=>mTrato(d.id,+d.n),
+  pesar:d=>mPesar(d.id),
+  oco:d=>mOco(d.id),
+  entrada:d=>mEntrada(d.id),
+  escSel:d=>{M.esc=+d.n;document.querySelectorAll('.opt').forEach(o=>o.classList.toggle('sel',+o.dataset.n===M.esc));updEsc()},
+  step:d=>{const i=$('#tr-real');i.value=Math.max(0,(+i.value||0)+(+d.d));updDev()},
+  export:()=>{
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}));
+    a.download='confina-certo-'+hoje()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  },
+  reset:()=>{if(confirm('Restaurar os dados de demonstração? Os lançamentos feitos aqui serão apagados.')){try{localStorage.removeItem(KEY)}catch(e){}seed();save();rerender();toast('Demonstração restaurada')}},
+  install:()=>{if(deferredInstall){deferredInstall.prompt();deferredInstall=null;rerender()}}
+};
+const FORMS={
+  cocho:()=>{
+    const b=baia(M.id),obs=$('#ck-obs').value.trim(),apl=$('#ck-apl').checked,dl=S.cfg.ajuste[M.esc];
+    const ex=ultimoCocho(b);
+    if(ex){if(ex.aplicado)b.ajuste-=ex.delta;S.cocho.splice(S.cocho.indexOf(ex),1)}
+    if(apl)b.ajuste=clamp(b.ajuste+dl,-20,20);
+    S.cocho.push({dia:hoje(),hora:horaAgora(),baiaId:b.id,escore:M.esc,delta:apl?dl:0,aplicado:apl,obs});
+    save();closeModal();rerender();toast('Leitura salva · '+b.nome+(apl&&dl?' · ajuste '+(dl>0?'+':'−')+Math.abs(dl)+'%':''));
+  },
+  trato:()=>{
+    const b=baia(M.id),real=Math.round(+$('#tr-real').value);
+    if(!(real>0)){toast('Informe a quantidade fornecida');return}
+    let rec=tratoRec(b,M.n);const old=rec?rec.real:0;
+    if(rec){rec.real=real;rec.hora=horaAgora()}else S.tratos.push({dia:hoje(),n:M.n,baiaId:b.id,prev:M.prev,real,hora:horaAgora()});
+    baixaEstoque(b,real-old);save();closeModal();rerender();toast('Trato '+M.n+' lançado · '+b.nome+' · estoque baixado');
+  },
+  pesar:()=>{
+    const b=baia(M.id),p=+$('#ps-p').value,d=$('#ps-d').value,n=+$('#ps-n').value||1;
+    if(!(p>0)||!d){toast('Informe data e peso');return}
+    b.pesagens=b.pesagens.filter(q=>q.d!==d);b.pesagens.push({d,peso:p,n});b.pesagens.sort((x,y)=>x.d<y.d?-1:1);
+    save();closeModal();rerender();const f=fechamento(b);toast('Pesagem salva · GMD '+fmt(gmdBaia(b),2)+' · saída '+(f.dias===0?'agora':fmtData(f.data)));
+  },
+  oco:()=>{
+    const b=baia(M.id),t=$('#oc-t').value,q=Math.min(Math.max(1,Math.round(+$('#oc-q').value)||1),b.cab),obs=$('#oc-o').value.trim();
+    if(t==='Morte')b.cab-=q;
+    if(t==='Movimentação'){const dst=baia($('#oc-b').value);b.cab-=q;dst.cab+=q}
+    S.oco.push({dia:hoje(),hora:horaAgora(),baiaId:b.id,tipo:t,qtd:q,obs:obs+(t==='Movimentação'?(obs?' · ':'')+'para '+baia($('#oc-b').value).nome:'')});
+    save();closeModal();rerender();toast(t+' registrada · '+b.nome);
+  },
+  ent:()=>{
+    const i=insumo(M.id),q=+$('#en-q').value,p=+$('#en-p').value;
+    if(!(q>0)){toast('Informe a quantidade');return}
+    i.saldo+=q;if(p>0)i.preco=p;save();closeModal();rerender();toast('Entrada lançada · '+i.nome+' +'+fmt(q/1000,1)+' t');
+  }
+};
+function cfgChange(el){
+  const k=el.dataset.cfg,v=el.value;
+  if(k==='fazenda')S.cfg.fazenda=v.trim()||'Minha fazenda';
+  else if(k==='tratosDia'){S.cfg.tratosDia=+v;S.cfg.horarios=HORARIOS[+v].slice();tratoSel=1}
+  else if(/^hor\d$/.test(k))S.cfg.horarios[+k.slice(3)]=v||S.cfg.horarios[+k.slice(3)];
+  else if(/^aj\d$/.test(k))S.cfg.ajuste[+k.slice(2)]=Math.round(+v)||0;
+  else{const n=+v;if(n>0)S.cfg[k]=n}
+  save();rerender();
+}
+
+/* ================= eventos ================= */
+document.addEventListener('click',e=>{
+  if(e.target.id==='modal'){closeModal();return}
+  const t=e.target.closest('[data-act]');if(!t)return;
+  if(ACT[t.dataset.act]){ACT[t.dataset.act](t.dataset,t,e)}
+});
+document.addEventListener('submit',e=>{
+  const f=e.target.closest('[data-form]');if(!f)return;e.preventDefault();FORMS[f.dataset.form]();
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='tr-real')updDev();
+  if(e.target.id==='ps-p'||e.target.id==='ps-d')updPes();
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='oc-t')$('#oc-dest').style.display=e.target.value==='Movimentação'?'block':'none';
+  if(e.target.dataset&&e.target.dataset.cfg)cfgChange(e.target);
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+window.addEventListener('online',()=>{chrome();toast('Conexão restabelecida')});
+window.addEventListener('offline',()=>{chrome();toast('Sem internet — tudo continua funcionando')});
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;if(view==='config')rerender()});
+window.addEventListener('hashchange',()=>{closeModal();render(true)});
+
+function render(top){
+  const h=(location.hash||'#painel').slice(1);
+  const novo=VIEWS[h]?h:'painel';
+  if(novo!==view)top=true;
+  view=novo;
+  const y=window.scrollY;
+  $('#view').innerHTML=VIEWS[view]();
+  chrome();
+  window.scrollTo(0,top?0:y);
+}
+
+load();
+if(tratoSel>S.cfg.tratosDia)tratoSel=1;
+tratoSel=Math.min(tratoAtual(),S.cfg.tratosDia);
+render(true);
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+})();
+</script>
+</body>
+</html>

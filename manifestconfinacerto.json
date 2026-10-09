@@ -1,0 +1,16 @@
+{
+  "name": "Confina Certo",
+  "short_name": "Confina Certo",
+  "description": "Gestão de confinamento: baias, cocho, trato, pesagem, estoque e custo por arroba.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14301f",
+  "theme_color": "#14301f",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
