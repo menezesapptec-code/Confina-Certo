@@ -161,6 +161,9 @@ a.row{color:inherit}
 #splash.out{opacity:0;pointer-events:none}
 #splash img{width:100%;height:100%;object-fit:contain;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 14%,#000 86%,transparent),linear-gradient(to right,transparent,#000 8%,#000 92%,transparent);-webkit-mask-composite:source-in;mask-image:linear-gradient(to bottom,transparent,#000 14%,#000 86%,transparent),linear-gradient(to right,transparent,#000 8%,#000 92%,transparent);mask-composite:intersect}
 .hid{display:none!important}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:#e8e2d3;border-radius:12px;padding:4px;margin:12px 0 4px}
+.seg button{border:0;background:transparent;border-radius:9px;padding:10px 6px;font-weight:700;color:var(--mut)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .gate-ic{font-size:40px;text-align:center;margin-bottom:6px}
 .contas .row{cursor:default;align-items:flex-start}
 .contas .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
@@ -179,15 +182,16 @@ a.row{color:inherit}
   <nav id="tabs"></nav>
 </div>
 <div id="login" class="login hidden"><div class="box"><img data-ic alt=""><h1>Confina Certo</h1><p class="sub" id="lg-sub">Gestão de trato e confinamento</p>
-<form data-form="login">
-<div id="lg-reg" class="hid"><label for="lg-fz">Nome da fazenda</label><input id="lg-fz" type="text" autocomplete="organization">
-<label for="lg-nm">Seu nome</label><input id="lg-nm" type="text" autocomplete="name">
+<div class="seg"><button type="button" id="tab-in" class="on" data-act="loginMode" data-m="in">Entrar</button><button type="button" id="tab-reg" data-act="loginMode" data-m="reg">Novo cadastro</button></div>
+<form data-form="login" novalidate>
+<div id="lg-reg" class="hid"><label for="lg-fz">Nome da fazenda (obrigatório)</label><input id="lg-fz" type="text" autocomplete="organization">
+<label for="lg-nm">Seu nome (obrigatório)</label><input id="lg-nm" type="text" autocomplete="name">
 <label for="lg-wa">WhatsApp (opcional)</label><input id="lg-wa" type="tel" autocomplete="tel"></div>
-<label for="lg-e">E-mail</label><input id="lg-e" type="email" autocomplete="username" required>
-<label for="lg-s">Senha</label><input id="lg-s" type="password" autocomplete="current-password" required minlength="6">
+<label for="lg-e">E-mail (obrigatório)</label><input id="lg-e" type="email" autocomplete="username" inputmode="email" autocapitalize="off" required>
+<label for="lg-s">Senha (mín. 6 caracteres)</label><input id="lg-s" type="password" autocomplete="current-password" required minlength="6">
 <div class="err" id="lg-err"></div>
 <button class="btn block" id="lg-go" style="margin-top:8px">Entrar</button>
-<button type="button" class="btn line block" id="lg-tg" style="margin-top:8px" data-act="loginMode">Primeiro acesso — criar conta</button></form></div></div>
+</form></div></div>
 <div id="gate" class="login hidden"><div class="box" id="gate-box"></div></div>
 <div id="modal" class="modal hidden"><div class="sheet" id="sheet"></div></div>
 <div id="toast"></div>
@@ -763,7 +767,7 @@ const ACT={
   },
   install:async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;render(false)}},
   logout:()=>{if(AUTH)AUTH.out()},
-  loginMode:()=>setLoginMode(loginMode==='in'?'reg':'in'),
+  loginMode:d=>setLoginMode(d.m||(loginMode==='in'?'reg':'in')),
   admSet:async(d)=>{
     if(!isSuper())return;
     try{await FS.setDoc(FS.doc(DB,'contas/'+d.id),{status:d.st,decididoEm:new Date().toISOString(),decididoPor:FB.user.email},{merge:true});toast(d.st==='liberado'?'Acesso liberado':'Acesso '+(d.st==='bloqueado'?'bloqueado':'atualizado'))}catch(e){toast(msgFS(e))}
@@ -921,7 +925,7 @@ function setLoginMode(m){
   loginMode=m;const reg=m==='reg';
   $('#lg-reg').classList.toggle('hid',!reg);
   $('#lg-go').textContent=reg?'Enviar cadastro':'Entrar';
-  $('#lg-tg').textContent=reg?'Já tenho conta — entrar':'Primeiro acesso — criar conta';
+  $('#tab-in').classList.toggle('on',!reg);$('#tab-reg').classList.toggle('on',reg);
   $('#lg-sub').textContent=reg?'Cadastre sua fazenda. O acesso é liberado após aprovação.':'Gestão de trato e confinamento';
   $('#lg-s').autocomplete=reg?'new-password':'current-password';
   $('#lg-err').textContent='';
@@ -929,8 +933,12 @@ function setLoginMode(m){
 async function authDo(kind){
   const e=$('#lg-e').value.trim(),pw=$('#lg-s').value,er=$('#lg-err');er.textContent='';
   if(!AUTH){er.textContent='O Firebase não carregou. Verifique a conexão.';return}
+  if(!e)return void(er.textContent='Informe o e-mail — é com ele que você entra.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))return void(er.textContent='E-mail inválido.');
+  if(pw.length<6)return void(er.textContent='A senha precisa ter pelo menos 6 caracteres.');
   const reg=kind==='reg',fz=$('#lg-fz').value.trim(),nm=$('#lg-nm').value.trim(),wa=$('#lg-wa').value.trim();
   if(reg&&!fz){er.textContent='Informe o nome da fazenda.';return}
+  if(reg&&!nm){er.textContent='Informe o seu nome.';return}
   const btn=$('#lg-go');btn.disabled=true;
   try{
     if(!reg)await AUTH.signIn(e,pw);
@@ -944,7 +952,7 @@ async function authDo(kind){
   btn.disabled=false;
 }
 async function contaCreate(){
-  const fz=$('#ct-fz').value.trim();if(!fz)return toast('Informe o nome da fazenda');
+  const fz=$('#ct-fz').value.trim(),nm=$('#ct-nm').value.trim();if(!fz)return toast('Informe o nome da fazenda');if(!nm)return toast('Informe o seu nome');
   try{await FS.setDoc(FS.doc(DB,'contas/'+FB.user.uid),{email:(FB.user.email||'').toLowerCase(),fazenda:fz,nome:$('#ct-nm').value.trim(),whats:$('#ct-wa').value.trim(),status:'pendente',criadoEm:new Date().toISOString()})}catch(e){toast(msgFS(e))}
 }
 function clearUI(){S=null;BT=null;FD=null;closeModal();$('#view').innerHTML='';$('#top').innerHTML='';$('#tabs').innerHTML='';$('#side').innerHTML=''}
@@ -954,7 +962,7 @@ function showGate(c){
   const out='<button type="button" class="btn line block" style="margin-top:14px" data-act="logout">Sair</button>';
   let h;
   if(!c&&SIGNUP)h=ic('⏳')+'<h1>Enviando cadastro…</h1>';
-  else if(!c)h='<h1>Complete seu cadastro</h1><p class="sub">Informe sua fazenda para pedir o acesso.</p><form data-form="conta"><label for="ct-fz">Nome da fazenda</label><input id="ct-fz" type="text"><label for="ct-nm">Seu nome</label><input id="ct-nm" type="text"><label for="ct-wa">WhatsApp (opcional)</label><input id="ct-wa" type="tel"><button class="btn block" style="margin-top:14px">Enviar cadastro</button></form>'+out;
+  else if(!c)h='<h1>Complete seu cadastro</h1><p class="sub">Conta: <b>'+esc(FB.user.email||'')+'</b><br>Informe sua fazenda para pedir o acesso.</p><form data-form="conta"><label for="ct-fz">Nome da fazenda (obrigatório)</label><input id="ct-fz" type="text"><label for="ct-nm">Seu nome (obrigatório)</label><input id="ct-nm" type="text"><label for="ct-wa">WhatsApp (opcional)</label><input id="ct-wa" type="tel"><button class="btn block" style="margin-top:14px">Enviar cadastro</button></form><button type="button" class="btn line block" style="margin-top:10px" data-act="logout">Entrar com outra conta</button>';
   else if(c.status==='bloqueado')h=ic('⛔')+'<h1>Acesso bloqueado</h1><p class="sub">O acesso desta conta está suspenso. Fale com o administrador.</p>'+out;
   else h=ic('⏳')+'<h1>Cadastro recebido</h1><p class="sub"><b>'+esc(c.fazenda||'')+'</b><br>'+esc(c.email||'')+'</p><p class="sub" style="margin-top:12px">Aguarde a liberação do administrador. Esta tela muda sozinha quando o acesso for aprovado.</p>'+out;
   box.innerHTML=h;$('#gate').classList.remove('hidden');
