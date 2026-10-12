@@ -1,5 +1,5 @@
 // Service worker: rede primeiro, cache como reserva (funciona sem internet e atualiza sozinho ao subir arquivos novos)
-const V = 'confina-v6';
+const V = 'confina-v7';
 const SHELL = ['./', 'index.html'];
 
 self.addEventListener('install', e => {
@@ -20,7 +20,7 @@ self.addEventListener('fetch', e => {
   // mesma origem + módulos do Firebase (gstatic) ficam em cache para abrir sem internet
   if (u.origin !== location.origin && u.hostname !== 'www.gstatic.com') return;
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, e.request.mode === 'navigate' ? { cache: 'no-store' } : undefined)
       .then(r => {
         const copy = r.clone();
         caches.open(V).then(c => c.put(e.request, copy));
