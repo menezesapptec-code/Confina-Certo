@@ -362,15 +362,15 @@ function compraCalc(id,st){
 }
 function formCalc(f,st){
   st=st||S;
-  let soma=0,ms=0,custo=0,pb=0,ndt=0,na=0,iono=0,sd=0,semCompra=[];
+  let soma=0,ms=0,custo=0,pb=0,ndt=0,na=0,am=0,ee=0,iono=0,sd=0,semCompra=[];
   (f.ing||[]).forEach(g=>{
     const i=byId(st.insumos,g.id);if(!i)return;
     const p=num(g.pct)/100,cc=compraCalc(i.id,st),m=num(i.ms)/100;
     soma+=num(g.pct);ms+=p*num(i.ms);custo+=p*cc.valorKg;iono+=p*num(i.iono);
-    sd+=p*m;pb+=p*m*num(i.pb);ndt+=p*m*num(i.ndt);na+=p*m*num(i.na);
+    sd+=p*m;pb+=p*m*num(i.pb);ndt+=p*m*num(i.ndt);na+=p*m*num(i.na);am+=p*m*num(i.am);ee+=p*m*num(i.ee);
     if(!cc.comprado)semCompra.push(i.nome);
   });
-  return {soma,ms,custo,pb:sd?pb/sd:0,ndt:sd?ndt/sd:0,na:sd?na/sd:0,iono,semCompra};
+  return {soma,ms,custo,pb:sd?pb/sd:0,ndt:sd?ndt/sd:0,na:sd?na/sd:0,am:sd?am/sd:0,ee:sd?ee/sd:0,iono,semCompra};
 }
 const lotesDaArea=id=>S.lotes.filter(l=>l.areaId===id);
 const fornHoje=areaId=>sum(S.forn.filter(h=>h.areaId===areaId&&h.data===hoje()),h=>h.kg);
@@ -719,12 +719,12 @@ function mArea(id){
   sheet('<h2>'+(id?'Área':'Nova área')+'</h2><form data-form="area" data-id="'+(id||'')+'">'+fld('ar-n','Nome (pasto ou baia)',a.nome,{txt:1})+fld('ar-m','Área (m²)',a.m2)+'<p class="note" id="ar-ha">'+fmt(num(a.m2)/10000,2)+' hectares</p><button class="btn block" style="margin-top:8px">Salvar</button></form>'+(id?delBtn('areas',id):''));
 }
 function mInsumo(id){
-  const i=id?insumo(id):{nome:'',cat:'',un:'kg',saco:'',ms:'',pb:'',ndt:'',na:'',iono:''};
+  const i=id?insumo(id):{nome:'',cat:'',un:'kg',saco:'',ms:'',pb:'',ndt:'',na:'',am:'',ee:'',iono:''};
   let st='';
   if(id){const c=compraCalc(id);st='<div class="kv">'+kv('Comprado',fmt(c.comprado)+' kg')+kv('Valor kg',c.comprado?brl(c.valorKg):'—')+kv('Estoque',fmt(c.estoque)+' kg')+'</div>'}
   sheet('<h2>'+(id?esc(i.nome):'Novo insumo')+'</h2>'+st+'<form data-form="insumo" data-id="'+(id||'')+'">'+fld('in-n','Nome',i.nome,{txt:1})
    +'<div class="cfgrow">'+selF('in-c','Categoria',S.cfg.listas.categorias,i.cat,'Selecione…')+fld('in-s','Saco (kg/sc)',i.saco)+'</div>'
-   +'<div class="cfgrow">'+fld('in-ms','MS (%)',i.ms)+fld('in-pb','PB (%)',i.pb)+'</div><div class="cfgrow">'+fld('in-ndt','NDT (%)',i.ndt)+fld('in-na','Na (%)',i.na)+'</div>'+fld('in-io','Ionóforo (mg/kg)',i.iono)
+   +'<div class="cfgrow">'+fld('in-ms','MS (%)',i.ms)+fld('in-pb','PB (%)',i.pb)+'</div><div class="cfgrow">'+fld('in-ndt','NDT (%)',i.ndt)+fld('in-na','Na (%)',i.na)+'</div><div class="cfgrow">'+fld('in-am','Amido (%)',i.am)+fld('in-ee','Extrato etéreo (%)',i.ee)+'</div>'+fld('in-io','Ionóforo (mg/kg)',i.iono)
    +'<button class="btn block" style="margin-top:12px">Salvar</button></form>'+(id?delBtn('insumos',id):''));
 }
 function mCompra(id){
@@ -759,7 +759,7 @@ function updFormula(){
   FD.rows.forEach((r,k)=>{const i=insumo(r.id),el=$('#fr-'+k);if(!el)return;
     el.textContent=i?'MS '+fmt(i.ms)+'% · '+brl(compraCalc(i.id).valorKg)+'/kg · contrib. '+brl(num(r.pct)/100*compraCalc(i.id).valorKg)+'/kg':''});
   const ok=Math.abs(c.soma-100)<=.01;
-  $('#fm-tot').innerHTML='<div class="kv" style="grid-template-columns:repeat(3,1fr)">'+kv('Soma','<span style="color:'+(ok?'#237a3f':'var(--red)')+'">'+fmt(c.soma,2)+'%</span>')+kv('MS',fmt(c.ms,1)+'%')+kv('R$/kg',brl(c.custo))+kv('PB (na MS)',fmt(c.pb,1)+'%')+kv('NDT (na MS)',fmt(c.ndt,1)+'%')+kv('Na (na MS)',fmt(c.na,2)+'%')+kv('Ionóforo',fmt(c.iono,1)+' mg/kg')+'</div>'
+  $('#fm-tot').innerHTML='<div class="kv" style="grid-template-columns:repeat(3,1fr)">'+kv('Soma','<span style="color:'+(ok?'#237a3f':'var(--red)')+'">'+fmt(c.soma,2)+'%</span>')+kv('MS',fmt(c.ms,1)+'%')+kv('R$/kg',brl(c.custo))+kv('PB (na MS)',fmt(c.pb,1)+'%')+kv('NDT (na MS)',fmt(c.ndt,1)+'%')+kv('Na (na MS)',fmt(c.na,2)+'%')+kv('Amido (na MS)',fmt(c.am,1)+'%')+kv('EE (na MS)',fmt(c.ee,1)+'%')+kv('Ionóforo',fmt(c.iono,1)+' mg/kg')+'</div>'
    +(ok?'':'<p class="note" style="color:var(--red)">A soma das inclusões precisa fechar 100% para salvar.</p>')+(c.semCompra.length?'<p class="note">Sem compra registrada: '+esc(c.semCompra.join(', '))+' (custo R$ 0).</p>':'');
 }
 function mForn(id){
@@ -812,7 +812,7 @@ FORMS.insumo=()=>{
   const id=$('[data-form=insumo]').dataset.id,nome=$('#in-n').value.trim();
   if(!nome)return toast('Informe o nome');
   if(S.insumos.some(i=>i.nome.toLowerCase()===nome.toLowerCase()&&i.id!==id))return toast('Já existe um insumo com esse nome');
-  const o={nome,cat:$('#in-c').value,un:'kg',saco:num($('#in-s').value),ms:num($('#in-ms').value),pb:num($('#in-pb').value),ndt:num($('#in-ndt').value),na:num($('#in-na').value),iono:num($('#in-io').value)};
+  const o={nome,cat:$('#in-c').value,un:'kg',saco:num($('#in-s').value),ms:num($('#in-ms').value),pb:num($('#in-pb').value),ndt:num($('#in-ndt').value),na:num($('#in-na').value),am:num($('#in-am').value),ee:num($('#in-ee').value),iono:num($('#in-io').value)};
   if(o.ms<=0||o.ms>100)return toast('MS deve estar entre 0 e 100%');
   if(id)Object.assign(insumo(id),o);else S.insumos.push(Object.assign({id:uid()},o));
   save();closeModal();render(false);toast('Insumo salvo');
