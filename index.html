@@ -242,7 +242,7 @@ const SYNC={last:new Map(),unsubs:[],remote:null,got:null,serverCfg:false,seeded
 const ICON192='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAADkklEQVR4nO3dLY4UURiF4YaQsAE8LAGBQWLZChqPR7MVLBLDItgGDkFCJhAGmDNd93y3nseOqPvz1q2umaTnwZPnTy9wVw9XD4DZBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEHq0eQJ0vbx/f8tMX778dNpIRHjx5/nT1GNa7PZo/EdPl5AHdrZvfnbmkkwZ0X+ncdM6MThfQNdK56WwZnSiga6dz03kyOstr/JH1HH+5hU4R0JLtPElDmz/CGnZx78fZzidQQz2XmmFcybYBVW1b1WDu154BFW5Y4ZDuxYYB1W5V7cASuwVUvknlw7uD3QLiYFsFNOL+HjHIf7dPQIM2ZtBQ/2qTgMZtybgB/8kmAbHKDgENvZuHDvsX4wMavQ2jB//D+IBYa3ZAG9zB06cwOyCWGxzQ9Hv3p9ETGRwQDaYGNPqu/d3c6UwNiBICIjIyoLkH/i2GTmpkQPSYF9DQO/VfTJzavICoIiAiAiIyLKCJnxL+y7gJDguINgIiIiAikwIa9/ngbmZNc1JAFBIQEQERERARAREZE9Csd5PQoMmOCYhOAiIiICIrv2j866fPqy69mWevXq66tBOIiICICIiIgIgIiIiAiAiIyPp/OOe3QYmFvwH6wQlEREBEBERkfUDLn+JzNSzd+oAYTUBEKgJqOIrHKVm0ioCYS0BEWgIqOZCn6FmuloAYSkBEigLqOZbLVS1UUUBMJCAiXQFVHc6d2paoKyDGERARARGpC6jtGV+lcHHqAmIWARFpDKjwoG7QuSyNATGIgIiUBtR5XC9UuyClATGFgIj0BlR7aB+veSl6A2IEAREREJHqgJqf/YcpX4TqgOgnICLtAZUf4NfWP/32gCi3/ltaGc0JRERARB6tHsBB3rx7ffxFP7z7ePxFD3aKE2hJPQuve6T9A1q7i9s3tH9AXJWAiAiIyP4BrX0V2v5FbP+ALut2cft6Lv6UQegUJxDXIyAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIvId1WJwNxdJbkcAAAAASUVORK5CYII=',ICON512='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7GkOtAAAKYklEQVR4nO3dMXIcxxWAYdClKl2AOX0EBk4UOvVVHDtX7thXcapQiQ+hayhzQJcNEwS42J2e7un/+3JWbc30vH/ekgQ+fPz86QmAnj/M/gAAzCEAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQ9cPsDwBn+NfffnzvH/nT338f8UlgHR8+fv40+zPAke6Y9bdTBXYiAOxg6NB/jRhwdQLAVU0Z+q8RA65IALiYpeb+S0rAhQgA17D43H9JCVifALC6y43+52SAlQkAi7r03H9JCViQALCczUb/czLAUgSAhWw8+p+TARYhACwhMvqfkwGmEwAmC47+52SAifwwOGaKT/8nV4CpbADMYfB9xSrA+WwATGD6v+SacD4bAKcy5r7LKsBpbACcx/S/havEaWwAnMFQu4NVgNFsAAxn+t/HdWM0AWAsU+wRrh5D+QqIUQyvA/k6iBFsAAxh+h/L9WQEAeB4ptUIriqHEwAOZk6N49pyLAHgSCbUaK4wBxIADmM2ncN15ij+FRAHMJKm8E+DeJANgEeZ/rO48jxIAHiIGTSX688jBID7mT4rcBe4mwBwJ3NnHe4F9xEA7mHirMYd4Q4CABAlALybl801uS+8lwDwPqbMytwd3kUAeAfzZX3uEbcTAG5lslyFO8WNBICbmCnX4n5xCwHg+0yTK3LX+C4BAIgSAL7Di+R1uXe8TQB4iwlyde4gbxAAXmV27MF95DUCABAlAHyb18aduJt8kwDwDebFftxTXhIAvmZS7Mqd5SsCABAlAPwfL4l7c395TgD4H9OhwF3mvwQAIEoA+A8vhh3uNV8IAECUAPD05JWwxx3nSQB4Mguq3HcEACBKAOq8Bpa5+3ECABAlAGleAHEGygQAIEoAurz68YWTkCUAUZ55nnMemgQAIEoAirzu8ZJTESQAAFECkONFj9c4GzUCABAlAABRAtBix+dtTkiKAABECUCIlztu4Zx0CABAlABUeK3jdk5LhAAARAkAQJQAJNjoeS9npkAAAKIEYH9e5biPk7M9AQCIEgCAKAHYnC2eRzg/exMAgCgBAIgSgJ3Z33mcU7QxAQCIEgCAKAHYls2dozhLuxIAgCgBAIgSgD3Z2TmWE7UlAQCIEgCAKAHYkG2dEZyr/QgAQJQAAEQJAECUAOzGF7WM43RtRgAAogQAIEoAAKIEYCu+omU0Z2wnAgAQJQAAUQIAECUAAFECsA9/O8c5nLRtCABAlAAARAkAQJQAAEQJwCb8vRxnct72IAAAUQIAECUAAFECABAlAABRAgAQJQA78G/yOJ9TtwEBAIgSAIAoAQCIEgCAKAEAiBIAgCgBAIgSAIAoAQCIEoDL8x8ymcXZuzoBAIgSAICoDx8/f5r9GTbx2y+/zv4IUPHHP/80+yPswAYAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFF+KfwQfkE8HM4vgj+cDQAgSgAAogRgCLsqHMszNYIAAEQJAECUAIxiY4WjeJoGEQCAKAEAiBKAgeyt8DjP0TgCABAlAABRAjCW7RUe4QkaSgAAogQAIEoAhrPDwn08O6MJAECUAABECQBAlACcwVeZ8F6emhMIAECUAABECcBJ7LNwO8/LOQQAIEoAAKIE4Dy2WriFJ+U0AgAQJQAAUQJwKrstvM0zciYBAIgSAIAoATibDRde4+k4mQAARAkAQJQATGDPhZc8F+cTAIAoAQCIEoA5bLvwnCdiCgEAiBIAgCgBmMbOC194FmYRAIAoAQCIEoCZbL7gKZhIAACiBAAgSgAms/9S5vzPJQAAUQIAECUA89mCaXLypxMAgCgBAIgSgCXYhalx5lcgAABRAgAQJQCrsBHT4bQvQgAAogQAIEoAFmIvpsA5X4cAAEQJAECUAKzFdszenPClCABAlAAARAnAcuzI7MrZXo0AAEQJAECUAKzIpsx+nOoFCQBAlAAARAnAouzL7MR5XpMAAEQJAECUAABECcC6fG3KHpzkZQkAQJQAAEQJwNLszlydM7wyAQCIEgCAKAFYnQ2a63J6FycAAFECABAlABdgj+aKnNv1CQBAlAAARAnANdimuRYn9hIEACBKAACiBOAy7NRchbN6FQIAECUAAFECcCU2a9bnlF6IAABECQBAlABcjP2alTmf1yIAAFECABAlANdjy2ZNTublCABA1IePnz/N/gwATGADAIgSAIAoAQCIEgCAKAEAiBIAgCgBAIgSAICoH2Z/AEL++vNfZn+Ea/jHz/+c/RFI8D+BOYPRfwcZYDRfATGc6X8f143RBICxTLFHuHoMJQAMZH49zjVkHAFgFJPrKK4kgwgAQJQAMISX1mO5nowgAABRAgAQJQAAUQIAECUAAFECABAlAAzhB5kdy/VkBAEAiBIARvHSehRXkkEEgIFMrse5howjAIxlfj3C1WMoAWA4U+w+rhuj+ZWQnMdPNLuR0c85BAAgyldAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABD1b2ipHcLDU76qAAAAAElFTkSuQmCC';
 const isSuper=()=>!!(FB.user&&ADMINS.includes((FB.user.email||'').toLowerCase()));
 const isOwner=()=>true; // cada usuário é dono dos próprios dados
-const BUILD='12/10/2026 · v7 (amido, EE, lotes, logo)';
+const BUILD='12/10/2026 · v8 (salvar e novo, origem, importar planilha)';
 const ADM={contas:[],unsub:null};
 let CONTA=null,CONTA_UNSUB=null,SIGNUP=false,loginMode='in';
 
@@ -495,15 +495,15 @@ VIEWS.lotes=()=>{
 };
 
 VIEWS.animais=()=>{
-  const btns='<div style="display:flex;gap:8px"><button class="btn sm sec" data-act="novosAnimais">+ Vários</button><button class="btn sm" data-act="novoAnimal">+ Novo animal</button></div>';
+  const btns='<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn sm sec" data-act="importar">Importar Excel</button><button class="btn sm sec" data-act="novosAnimais">+ Vários</button><button class="btn sm" data-act="novoAnimal">+ Novo animal</button></div>';
   const h=head('Animais',S.animais.length+' cadastrado(s)',btns);
-  if(!S.animais.length)return h+'<div class="card empty">Nenhum animal cadastrado. Toque em “+ Novo animal” ou “+ Vários” (sequência de brincos).</div>';
+  if(!S.animais.length)return h+'<div class="card empty">Nenhum animal cadastrado. Toque em “+ Novo animal”, “+ Vários” (sequência de brincos) ou “Importar Excel”.</div>';
   const semLote=S.animais.filter(a=>!a.loteId).length;
   const chips='<div class="chips"><button class="chip '+(!fAn?'on':'')+'" data-act="fan" data-f="">Todos</button><button class="chip '+(fAn==='none'?'on':'')+'" data-act="fan" data-f="none">Sem lote ('+semLote+')</button>'+S.lotes.map(l=>'<button class="chip '+(fAn===l.id?'on':'')+'" data-act="fan" data-f="'+l.id+'">'+esc(l.nome)+' ('+animaisDoLote(l.id).length+')</button>').join('')+'</div>';
   const lista=S.animais.filter(a=>!fAn||(fAn==='none'?!a.loteId:a.loteId===fAn));
   const rows=lista.slice().sort((a,b)=>String(a.brinco).localeCompare(String(b.brinco),'pt-BR',{numeric:true})).map(a=>{
     const m=idadeMeses(a.nasc),l=byId(S.lotes,a.loteId),cat=a.cat||catSugerida(a.sexo,m);
-    return '<tr data-act="animal" data-id="'+a.id+'" data-s="'+esc((a.brinco+' '+a.raca+' '+a.dono+' '+cat+' '+(l?l.nome:'')).toLowerCase())+'" style="cursor:pointer"><td><b>'+esc(a.brinco)+'</b><br><span class="mut">'+esc(cat)+' · '+esc(a.raca||'')+(l?' · '+esc(l.nome):'')+'</span></td><td>'+(m==null?'—':m+' m')+'</td><td>'+fmt(a.pesoIn)+'</td><td>'+brl(a.valor)+'<br><span class="mut" style="font-size:11px">'+esc(a.dono||'')+'</span></td></tr>'}).join('');
+    return '<tr data-act="animal" data-id="'+a.id+'" data-s="'+esc((a.brinco+' '+a.raca+' '+a.dono+' '+(a.origem||'')+' '+cat+' '+(l?l.nome:'')).toLowerCase())+'" style="cursor:pointer"><td><b>'+esc(a.brinco)+'</b><br><span class="mut">'+esc(cat)+' · '+esc(a.raca||'')+(a.origem?' · '+esc(a.origem):'')+(l?' · '+esc(l.nome):'')+'</span></td><td>'+(m==null?'—':m+' m')+'</td><td>'+fmt(a.pesoIn)+'</td><td>'+brl(a.valor)+'<br><span class="mut" style="font-size:11px">'+esc(a.dono||'')+'</span></td></tr>'}).join('');
   return h+chips+'<div class="card"><input id="an-q" placeholder="Buscar brinco, categoria, raça, proprietário" style="margin-bottom:10px"><div class="scroll"><table><tr><th>Brinco</th><th>Idade</th><th>Peso compra</th><th>Valor pago</th></tr>'+rows+'</table></div>'+(lista.length?'':'<div class="empty">Nenhum animal neste filtro.</div>')+'</div>';
 };
 
@@ -681,6 +681,72 @@ function mAlocar(id){
   alCount();
 }
 function alCount(){const n=document.querySelectorAll('.al-cb:checked').length;if($('#al-n'))$('#al-n').textContent=n+' selecionado(s)'}
+/* ===== importar planilha de animais ===== */
+let IMP=null;
+function loadXLSX(){return window.XLSX?Promise.resolve():new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';sc.onload=ok;sc.onerror=()=>no(new Error('offline'));document.head.appendChild(sc)})}
+const IMP_COLS=['Brinco','Sexo','Categoria','Nascimento','Raça','Proprietário','Origem','Data de entrada','Peso de compra','Valor por kg','Lote'];
+function impModelo(){loadXLSX().then(()=>{const ws=XLSX.utils.aoa_to_sheet([IMP_COLS,['1001','Macho','Garrote','10/01/2025','Nelore','Fazenda X','Leilão Barra','12/10/2026',285,14,'']]);ws['!cols']=IMP_COLS.map(()=>({wch:16}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Animais');XLSX.writeFile(wb,'modelo-entrada-animais.xlsx')}).catch(()=>toast('Precisa de internet para gerar o modelo'))}
+function mImportar(){
+  IMP=null;
+  sheet('<h2>Importar animais (Excel)</h2><p class="note">Envie uma planilha .xlsx, .xls ou .csv com uma linha por animal. Colunas reconhecidas: <b>'+IMP_COLS.join(', ')+'</b>. Só o brinco é obrigatório. Também aceito “Idade (meses)” no lugar do nascimento e “Valor pago” no lugar do valor por kg.</p>'
+   +'<button type="button" class="btn sec block" data-act="impModelo" style="margin:8px 0">Baixar planilha modelo</button>'
+   +'<label class="btn block" for="imp-f" style="cursor:pointer;margin-top:8px">Escolher arquivo</label><input id="imp-f" type="file" accept=".xlsx,.xls,.csv,.ods" style="display:none"><div id="imp-r" style="margin-top:12px"></div>');
+}
+const nrm=x=>String(x==null?'':x).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const IMP_MAP={brinco:['brinco','identificacao','id','numero','nbrinco','nrbrinco','animal'],sexo:['sexo'],cat:['categoria','cat'],nasc:['nascimento','datanascimento','nasc','dtnasc','datadenascimento'],idade:['idade','idademeses','idadeemmeses','meses'],raca:['raca'],dono:['proprietario','dono'],origem:['origem','procedencia'],entrada:['entrada','dataentrada','dtentrada','datadeentrada'],peso:['peso','pesocompra','pesodecompra','pesoentrada','pesodeentrada','pesokg'],valorKg:['valorkg','valorporkg','rkg','valorkgpago','precokg','valorporkgpago'],valor:['valor','valorpago','valortotal','total'],lote:['lote']};
+function impNum(v){if(typeof v==='number')return v;let t=String(v==null?'':v).replace(/[R$\s]/g,'');if(t.includes(',')&&t.includes('.'))t=t.replace(/\./g,'');return num(t)}
+function impData(v){
+  if(v==null||v==='')return '';
+  if(typeof v==='number'&&v>20000&&v<80000){const d=new Date(Date.UTC(1899,11,30)+Math.round(v)*864e5);return d.toISOString().slice(0,10)}
+  if(v instanceof Date)return new Date(v.getTime()+12*36e5).toISOString().slice(0,10);
+  const t=String(v).trim();let m;
+  if((m=t.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/))){const y=m[3].length===2?'20'+m[3]:m[3];return y+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0')}
+  if((m=t.match(/^(\d{4})-(\d{2})-(\d{2})/)))return m[1]+'-'+m[2]+'-'+m[3];
+  return '';
+}
+function impParse(rows){
+  const hdr=rows[0].map(nrm),ix={};
+  Object.keys(IMP_MAP).forEach(k=>{const j=hdr.findIndex(h=>IMP_MAP[k].includes(h));if(j>=0)ix[k]=j});
+  if(ix.brinco==null)return {erro:'Não encontrei a coluna “Brinco” na primeira linha.'};
+  const ex=new Set(S.animais.map(a=>String(a.brinco).toLowerCase())),vistos=new Set(),ok=[],dup=[],vazio=[],semLote=new Set();
+  const lotes=new Map(S.lotes.map(l=>[nrm(l.nome),l]));
+  rows.slice(1).forEach(r=>{
+    const g=k=>ix[k]==null?'':r[ix[k]];
+    const brinco=String(g('brinco')==null?'':g('brinco')).trim();
+    if(!r.some(c=>c!==''&&c!=null))return;
+    if(!brinco){vazio.push(1);return}
+    const key=brinco.toLowerCase();
+    if(ex.has(key)||vistos.has(key)){dup.push(brinco);return}
+    vistos.add(key);
+    const sx=nrm(g('sexo')).startsWith('f')?'Fêmea':'Macho';
+    let nasc=impData(g('nasc'));
+    if(!nasc&&g('idade')!==''){const m=impNum(g('idade'));if(m>0)nasc=addDias(hoje(),-Math.round(m*30.4375))}
+    const cn=nrm(g('cat')),cat=CATS_ANIMAL.find(c=>nrm(c)===cn)||catSugerida(sx,idadeMeses(nasc))||'';
+    const pesoIn=impNum(g('peso'));let valorKg=impNum(g('valorKg')),valor=impNum(g('valor'));
+    if(valorKg>0)valor=r2(pesoIn*valorKg);else if(valor>0&&pesoIn>0)valorKg=r2(valor/pesoIn);
+    let loteId='';const ln=String(g('lote')==null?'':g('lote')).trim();
+    if(ln){const l=lotes.get(nrm(ln));if(l)loteId=l.id;else semLote.add(ln)}
+    ok.push({id:uid(),brinco,sexo:sx,cat,nasc,raca:String(g('raca')||'').trim(),dono:String(g('dono')||'').trim(),origem:String(g('origem')||'').trim(),entrada:impData(g('entrada'))||hoje(),pesoIn,valorKg,valor,loteId});
+  });
+  return {ok,dup,vazio:vazio.length,semLote:[...semLote]};
+}
+function impLer(file){
+  const box=$('#imp-r');box.innerHTML='<p class="note">Lendo planilha…</p>';
+  loadXLSX().then(()=>file.arrayBuffer()).then(buf=>{
+    const wb=XLSX.read(buf,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
+    if(rows.length<2){box.innerHTML='<p class="note" style="color:var(--red)">A planilha está vazia.</p>';return}
+    const r=impParse(rows);
+    if(r.erro){box.innerHTML='<p class="note" style="color:var(--red)">'+r.erro+'</p>';return}
+    IMP=r.ok;
+    box.innerHTML='<div class="kv"><div><small>Prontos</small><b>'+r.ok.length+'</b></div><div><small>Ignorados</small><b>'+(r.dup.length+r.vazio)+'</b></div><div><small>Valor total</small><b>'+brl(sum(r.ok,a=>a.valor))+'</b></div></div>'
+     +(r.dup.length?'<p class="note">Brinco já cadastrado ou repetido (ignorados): '+esc(r.dup.slice(0,8).join(', '))+(r.dup.length>8?'…':'')+'</p>':'')
+     +(r.vazio?'<p class="note">'+r.vazio+' linha(s) sem brinco ignorada(s).</p>':'')
+     +(r.semLote.length?'<p class="note">Lote não encontrado (ficam sem lote): '+esc(r.semLote.join(', '))+'. Crie o lote em Lotes e atribua depois.</p>':'')
+     +(r.ok.length?'<div class="scroll"><table><tr><th>Brinco</th><th>Categoria</th><th>Peso</th><th>Valor</th></tr>'+r.ok.slice(0,5).map(a=>'<tr><td>'+esc(a.brinco)+'</td><td>'+esc(a.cat||'—')+'</td><td>'+fmt(a.pesoIn)+'</td><td>'+brl(a.valor)+'</td></tr>').join('')+'</table></div><p class="note">'+(r.ok.length>5?'Mostrando 5 de '+r.ok.length+'.':'')+'</p><button type="button" class="btn block" data-act="impGo">Importar '+r.ok.length+' animais</button>':'');
+  }).catch(()=>{box.innerHTML='<p class="note" style="color:var(--red)">Não consegui ler o arquivo. Precisa de internet para abrir planilhas; confira também se é .xlsx, .xls ou .csv.</p>'});
+}
+function impGo(){if(!IMP||!IMP.length)return;const n=IMP.length;S.animais.push(...IMP);IMP=null;save();closeModal();render(false);toast(n+' animais importados')}
 /* ===== animal ===== */
 function animalPanel(){
   const m=idadeMeses($('#an-n').value),d=$('#an-n').value?diffDias($('#an-n').value,hoje()):null,p=num($('#an-p').value),k=num($('#an-k').value);
@@ -690,19 +756,20 @@ function catAutoSet(){
   const c=$('#an-c');if(!c||c.dataset.man==='1')return;
   const sug=catSugerida($('#an-s').value,idadeMeses($('#an-n').value));if(sug)c.value=sug;
 }
-function mAnimal(id){
-  const a=id?byId(S.animais,id):{brinco:'',sexo:'Macho',cat:'',nasc:'',raca:'',dono:'',entrada:hoje(),pesoIn:'',valorKg:'',valor:'',loteId:''};
+function mAnimal(id,pre){
+  const a=id?byId(S.animais,id):Object.assign({brinco:'',sexo:'Macho',cat:'',nasc:'',raca:'',dono:'',origem:'',entrada:hoje(),pesoIn:'',valorKg:'',valor:'',loteId:''},pre||{});
   const kg=a.valorKg||(num(a.pesoIn)>0&&a.valor?r2(num(a.valor)/num(a.pesoIn)):'');
-  const donos=[...new Set(S.animais.map(x=>x.dono).filter(Boolean))];
+  const donos=[...new Set(S.animais.map(x=>x.dono).filter(Boolean))],origens=[...new Set(S.animais.map(x=>x.origem).filter(Boolean))];
   sheet('<h2>'+(id?'Animal '+esc(a.brinco):'Novo animal')+'</h2><form data-form="animal" data-id="'+(id||'')+'">'
    +'<div class="cfgrow">'+fld('an-b','Brinco',a.brinco,{txt:1})+selF('an-s','Sexo',['Macho','Fêmea'],a.sexo)+'</div>'
    +'<div class="cfgrow">'+fld('an-n','Data de nascimento',a.nasc,{type:'date'})+selF('an-c','Categoria',CATS_ANIMAL,a.cat||catSugerida(a.sexo,idadeMeses(a.nasc)),'Selecione…')+'</div>'
    +'<div class="cfgrow">'+selF('an-r','Raça',S.cfg.listas.racas,a.raca,'Selecione…')+fld('an-e','Data de entrada',a.entrada,{type:'date'})+'</div>'
    +'<div id="an-calc"></div>'
-   +'<label for="an-d">Proprietário</label><input id="an-d" list="an-dl" value="'+esc(a.dono)+'"><datalist id="an-dl">'+donos.map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist>'
+   +'<div class="cfgrow"><div><label for="an-d">Proprietário</label><input id="an-d" list="an-dl" value="'+esc(a.dono)+'"><datalist id="an-dl">'+donos.map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist></div>'
+   +'<div><label for="an-o">Origem</label><input id="an-o" list="an-ol" value="'+esc(a.origem||'')+'" placeholder="Fazenda / leilão / cidade"><datalist id="an-ol">'+origens.map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist></div></div>'
    +'<div class="cfgrow">'+fld('an-k','Valor por kg pago (R$)',kg)+fld('an-p','Peso de compra (kg)',a.pesoIn)+'</div>'
    +selF('an-l','Lote (opcional)',S.lotes.map(l=>[l.id,l.nome]),a.loteId,'Sem lote')
-   +'<button class="btn block" style="margin-top:12px">Salvar</button></form>'+(id?delBtn('animais',id):''));
+   +'<div class="cfgrow" style="margin-top:12px"><button class="btn block">Salvar</button>'+(id?'':'<button type="button" class="btn sec block" data-act="animalNovo">Salvar e novo</button>')+'</div></form>'+(id?delBtn('animais',id):''));
   if(a.cat&&a.cat!==catSugerida(a.sexo,idadeMeses(a.nasc)))$('#an-c').dataset.man='1';
   $('#an-calc').innerHTML=animalPanel();
 }
@@ -714,7 +781,7 @@ function mVarios(){
    +'<div class="cfgrow">'+selF('bk-c','Categoria',CATS_ANIMAL,'','Selecione…')+selF('bk-r','Raça',S.cfg.listas.racas,'','Selecione…')+'</div>'
    +'<label for="bk-d">Proprietário</label><input id="bk-d" list="bk-dl"><datalist id="bk-dl">'+donos.map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist>'
    +'<div class="cfgrow">'+fld('bk-e','Data de entrada',hoje(),{type:'date'})+selF('bk-l','Lote (opcional)',S.lotes.map(l=>[l.id,l.nome]),'','Sem lote')+'</div>'
-   +'<div class="cfgrow">'+fld('bk-k','Valor por kg pago (R$)',"")+fld('bk-w','Peso de compra (kg)',"")+'</div>'
+   +fld('bk-o','Origem',"",{txt:1})+'<div class="cfgrow">'+fld('bk-k','Valor por kg pago (R$)',"")+fld('bk-w','Peso de compra (kg)',"")+'</div>'
    +'<p class="note" id="bk-t"></p><button class="btn block" style="margin-top:8px">Cadastrar</button></form>');
 }
 function mArea(id){
@@ -784,16 +851,17 @@ FORMS.lote=()=>{
   save();closeModal();render(false);
   if(!id&&S.animais.some(a=>!a.loteId))mAlocar(nid);else toast('Lote salvo');
 };
-FORMS.animal=()=>{
+function saveAnimal(){
   const id=$('[data-form=animal]').dataset.id,brinco=$('#an-b').value.trim();
-  if(!brinco)return toast('Informe o brinco');
-  if(S.animais.some(a=>a.brinco.toLowerCase()===brinco.toLowerCase()&&a.id!==id))return toast('Já existe um animal com esse brinco');
+  if(!brinco){toast('Informe o brinco');return null}
+  if(S.animais.some(a=>String(a.brinco).toLowerCase()===brinco.toLowerCase()&&a.id!==id)){toast('Já existe um animal com esse brinco');return null}
   const pesoIn=num($('#an-p').value),valorKg=num($('#an-k').value);
-  const o={brinco,sexo:$('#an-s').value,cat:$('#an-c').value,nasc:$('#an-n').value,raca:$('#an-r').value,dono:$('#an-d').value.trim(),entrada:$('#an-e').value,pesoIn,valorKg,valor:r2(pesoIn*valorKg),loteId:$('#an-l').value};
-  if(o.nasc&&o.nasc>hoje())return toast('Nascimento não pode ser no futuro');
+  const o={brinco,sexo:$('#an-s').value,cat:$('#an-c').value,nasc:$('#an-n').value,raca:$('#an-r').value,dono:$('#an-d').value.trim(),origem:$('#an-o').value.trim(),entrada:$('#an-e').value,pesoIn,valorKg,valor:r2(pesoIn*valorKg),loteId:$('#an-l').value};
+  if(o.nasc&&o.nasc>hoje()){toast('Nascimento não pode ser no futuro');return null}
   if(id)Object.assign(byId(S.animais,id),o);else S.animais.push(Object.assign({id:uid()},o));
-  save();closeModal();render(false);toast('Animal salvo');
-};
+  save();return o;
+}
+FORMS.animal=()=>{if(saveAnimal()){closeModal();render(false);toast('Animal salvo')}};
 FORMS.varios=()=>{
   const p=$('#bk-p').value.trim(),i0=Math.round(num($('#bk-i').value)),q=Math.round(num($('#bk-q').value));
   if(!(q>0)||q>500)return toast('Informe a quantidade (1 a 500)');
@@ -801,7 +869,7 @@ FORMS.varios=()=>{
   const w=String(i0+q-1).length,ex=new Set(S.animais.map(a=>String(a.brinco).toLowerCase()));
   const novos=[];
   for(let n=0;n<q;n++){const b=p+String(i0+n).padStart(w,'0');if(ex.has(b.toLowerCase()))return toast('Brinco '+b+' já existe');
-    novos.push({id:uid(),brinco:b,sexo:$('#bk-s').value,cat:$('#bk-c').value,nasc:'',raca:$('#bk-r').value,dono:$('#bk-d').value.trim(),entrada:$('#bk-e').value,pesoIn,valorKg,valor:r2(pesoIn*valorKg),loteId:$('#bk-l').value})}
+    novos.push({id:uid(),brinco:b,sexo:$('#bk-s').value,cat:$('#bk-c').value,nasc:'',raca:$('#bk-r').value,dono:$('#bk-d').value.trim(),origem:$('#bk-o').value.trim(),entrada:$('#bk-e').value,pesoIn,valorKg,valor:r2(pesoIn*valorKg),loteId:$('#bk-l').value})}
   S.animais.push(...novos);save();closeModal();render(false);toast(q+' animais cadastrados');
 };
 FORMS.area=()=>{
@@ -870,7 +938,11 @@ const ACT={
   close:()=>closeModal(),
   go:d=>{location.hash='#'+d.v},
   novoLote:()=>mLote(),lote:d=>mLote(d.id),
-  novoAnimal:()=>mAnimal(),animal:d=>mAnimal(d.id),novosAnimais:()=>mVarios(),
+  novoAnimal:()=>mAnimal(),
+  animalNovo:()=>{const o=saveAnimal();if(!o)return;render(false);
+    mAnimal(null,{sexo:o.sexo,cat:o.cat,nasc:o.nasc,raca:o.raca,dono:o.dono,origem:o.origem,entrada:o.entrada,valorKg:o.valorKg||'',loteId:o.loteId});
+    toast('Salvo: '+o.brinco+' · próximo');setTimeout(()=>{const b=$('#an-b');if(b)b.focus()},50)},
+  importar:()=>mImportar(),impGo:()=>impGo(),impModelo:()=>impModelo(),animal:d=>mAnimal(d.id),novosAnimais:()=>mVarios(),
   fan:d=>{fAn=d.f||'';render(false)},alocar:d=>mAlocar(d.id),
   alAll:d=>{document.querySelectorAll('.al-cb').forEach(c=>{if(c.closest('.alrow').style.display!=='none')c.checked=d.v==='1'});alCount()},
   alSave:()=>{const on=new Set([...document.querySelectorAll('.al-cb:checked')].map(c=>c.dataset.id));
@@ -980,6 +1052,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const id=e.target.id||'';
+  if(id==='imp-f'){const f=e.target.files&&e.target.files[0];if(f)impLer(f);return}
   if(id==='cf-logo'){const fl=e.target.files&&e.target.files[0];if(!fl)return;
     const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{
       const m=Math.min(1,256/Math.max(im.width,im.height)),w=Math.max(1,Math.round(im.width*m)),h=Math.max(1,Math.round(im.height*m));
