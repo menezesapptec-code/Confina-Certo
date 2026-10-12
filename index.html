@@ -285,6 +285,54 @@ function seed(){
   });
   return s;
 }
+
+/* ===== dados de demonstração (200 animais) ===== */
+const DEMO_EMAILS={'menezeslemes82@gmail.com':'Fazenda JPedroso'};
+function demoFazenda(nome){
+  let sd=2026;const rnd=()=>{sd|=0;sd=sd+0x6D2B79F5|0;let t=Math.imul(sd^sd>>>15,1|sd);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+  const pick=(a,w)=>{let r=rnd()*w.reduce((x,y)=>x+y,0);for(let i=0;i<a.length;i++){r-=w[i];if(r<0)return a[i]}return a[a.length-1]};
+  const s=emptyState();s.cfg.fazenda=nome;s.cfg.demo=true;
+  const h=hoje();
+  const AR=[['Baia 1',2200],['Baia 2',2400],['Baia 3',2600],['Baia 4',2600],['Baia 5',2000],['Baia 6',2000],['Pasto Sede',60000],['Pasto Açude',85000]];
+  s.areas=AR.map((x,i)=>({id:'da'+(i+1),nome:x[0],m2:x[1]}));
+  // lote, área, dias desde entrada, qtd, categoria, peso entrada, %PV, dias, GMD, fórmula, idade mín/máx (meses)
+  const L=[['Lote 01 · Adaptação','da1',12,52,'Garrote',350,2.0,100,1.1,'df1',12,16],['Lote 02 · Crescimento','da2',35,48,'Garrote',380,2.1,90,1.3,'df2',14,20],
+           ['Lote 03 · Terminação','da3',70,50,'Boi',420,2.2,110,1.5,'df3',22,30],['Lote 04 · Terminação','da4',52,50,'Boi',410,2.2,100,1.45,'df3',20,28]];
+  s.lotes=L.map((x,i)=>({id:'dl'+(i+1),nome:x[0],areaId:x[1],inicio:addDias(h,-x[2]),qtd:x[3],rc:.52,cat:x[4],pesoIn:x[5],cons:x[6],dias:x[7],gmd:x[8]}));
+  let n=0;
+  L.forEach((x,i)=>{
+    for(let k=0;k<x[3];k++){
+      n++;const fem=i===0&&k<6;
+      const idade=x[10]+Math.floor(rnd()*(x[11]-x[10]+1)),nasc=addDias(addDias(h,-x[2]),-Math.round(idade*30.4)-Math.floor(rnd()*20));
+      const peso=Math.round(x[5]*(fem?.92:1)*(.93+rnd()*.14));
+      s.animais.push({id:'dn'+n,brinco:'JP'+String(n).padStart(4,'0'),sexo:fem?'Fêmea':'Macho',nasc,raca:pick(['Nelore','Angus','Cruzado','Brahman'],[58,16,22,4]),
+        dono:pick([nome,'Terceiro · Agro Silva','Terceiro · Marcos Lima'],[68,20,12]),entrada:addDias(h,-x[2]),pesoIn:peso,valor:r2(peso*(9.8+rnd()*1.4)),loteId:'dl'+(i+1)});
+    }
+  });
+  const I=[['di1','Milho moído','Energético',60,88,9,88,0,0,.98,'Cooperativa Agrícola'],['di2','Silagem de milho','Volumoso',0,35,8,68,0,0,.24,'Fazenda Vizinha'],['di3','Farelo de soja','Proteico',40,89,46,84,0,0,2.31,'Grãos do Vale'],
+           ['di4','Caroço de algodão','Proteico',40,90,23,90,0,0,1.62,'Grãos do Vale'],['di5','Núcleo confinamento','Nucleo',25,99,0,0,8,600,4.90,'Agroline']];
+  s.insumos=I.map(x=>({id:x[0],nome:x[1],cat:x[2],un:'kg',saco:x[3],ms:x[4],pb:x[5],ndt:x[6],na:x[7],iono:x[8]}));
+  const price={};I.forEach(x=>price[x[0]]=x[9]);
+  const F=[['df1','Adaptação','TIP - Adaptação',[['di2',55],['di1',25],['di3',15],['di5',5]]],['df2','Crescimento','TIP - Crescimento',[['di2',35],['di1',40],['di3',13],['di4',7],['di5',5]]],
+           ['df3','Terminação','TIP - Terminação',[['di2',15],['di1',55],['di3',12],['di4',13],['di5',5]]]];
+  s.formulas=F.map(x=>({id:x[0],nome:x[1],tipo:x[2],ativa:true,ing:x[3].map(g=>({id:g[0],pct:g[1]}))}));
+  const used={};
+  for(let d=10;d>=0;d--){
+    const dia=addDias(h,-d);
+    s.lotes.forEach((l,i)=>{
+      if(l.inicio>dia||(d===0&&i>1))return;
+      const f=s.formulas.find(q=>q.id===L[i][9]),peso=l.pesoIn+l.gmd*diffDias(l.inicio,dia),q=Math.round(l.qtd*peso*l.cons/100);
+      const real=f.ing.map(g=>({id:g.id,kg:r2(q*g.pct/100*(.98+rnd()*.04))}));
+      real.forEach(r=>used[r.id]=(used[r.id]||0)+r.kg);
+      const prod=sum(real,r=>r.kg),custoKg=sum(f.ing,g=>g.pct/100*price[g.id]),snap=f.ing.map(g=>({id:g.id,pct:g.pct})),kg=Math.round(prod*(.97+rnd()*.03)),bid='db-'+d+'-'+(i+1);
+      s.batidas.push({id:bid,data:dia,formulaId:f.id,formulaNome:f.nome,qtd:q,snap,real,custoKg:r2(custoKg*1000)/1000,total:r2(prod*custoKg),dist:[{areaId:l.areaId,kg}]});
+      s.forn.push({id:'dh-'+d+'-'+(i+1),batidaId:bid,areaId:l.areaId,data:dia,formulaId:f.id,nome:f.nome,kg,valor:r2(kg*custoKg),snap});
+    });
+  }
+  const fator={di1:3.2,di2:4,di3:3,di4:3.5,di5:1.25};
+  I.forEach((x,k)=>{s.compras.push({id:'dc'+(k+1),insumoId:x[0],qtd:Math.ceil((used[x[0]]||0)*fator[x[0]]/100)*100,forn:x[10],data:addDias(h,-26+k*2),preco:x[9]})});
+  return s;
+}
 function load(){
   try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);if(o&&o.v===3&&o.cfg){S=o;S.animais=S.animais||[];S.cfg.listas=Object.assign({},LISTAS0,S.cfg.listas||{});return}}}catch(e){}
   S=seed();save();
@@ -493,6 +541,7 @@ VIEWS.admin=()=>{
       return '<div class="row" data-s="'+esc(((c.fazenda||'')+' '+(c.nome||'')+' '+(c.email||'')).toLowerCase())+'"><div class="g"><b>'+esc(c.fazenda||'(sem nome)')+'</b><span>'+esc(c.nome||'')+(c.nome?' · ':'')+esc(c.email||'')+(c.whats?' · '+esc(c.whats):'')+'</span><span style="display:block;font-size:12px">Cadastro em '+dt(c.criadoEm)+(c.decididoEm?' · decisão em '+dt(c.decididoEm):'')+'</span>'
       +'<div class="acts">'+(st!=='liberado'?'<button class="btn sm" data-act="admSet" data-id="'+esc(c.id)+'" data-st="liberado">Liberar acesso</button>':'')
       +(st!=='bloqueado'?'<button class="btn sm sec" data-act="admSet" data-id="'+esc(c.id)+'" data-st="bloqueado">'+(st==='pendente'?'Recusar':'Bloquear')+'</button>':'')
+      +(st==='liberado'?'<button class="btn sm sec" data-act="admDemo" data-id="'+esc(c.id)+'" data-nm="'+esc(c.fazenda||'')+'">Carregar demonstração</button>':'')
       +(wa?'<a class="btn sm sec" target="_blank" rel="noopener" href="https://wa.me/'+(wa.length<=11?'55':'')+wa+'">WhatsApp</a>':'')
       +'<button class="btn sm line" style="color:var(--red)" data-act="admDel" data-id="'+esc(c.id)+'">Remover</button></div></div></div>'}).join('')+'</div>';
   });
@@ -788,6 +837,18 @@ const ACT={
     if(!isSuper())return;
     try{await FS.setDoc(FS.doc(DB,'contas/'+d.id),{status:d.st,decididoEm:new Date().toISOString(),decididoPor:FB.user.email},{merge:true});toast(d.st==='liberado'?'Acesso liberado':'Acesso '+(d.st==='bloqueado'?'bloqueado':'atualizado'))}catch(e){toast(msgFS(e))}
   },
+  admDemo:async(d,t)=>{
+    if(!isSuper())return;
+    if(!t.dataset.arm){t.dataset.arm=1;t.textContent='Confirmar: substitui os dados do cliente';return}
+    t.disabled=true;t.textContent='Carregando…';
+    try{
+      const st=demoFazenda(d.nm||'Fazenda'),b='u/'+d.id+'/',docs=[['cfg/main',st.cfg]];
+      COLS.forEach(c=>st[c].forEach(o=>docs.push([c+'/'+o.id,o])));
+      for(let i=0;i<docs.length;i+=40)await Promise.all(docs.slice(i,i+40).map(([p,o])=>FS.setDoc(FS.doc(DB,b+p),clean(o))));
+      toast('Demonstração carregada: '+st.animais.length+' animais');
+    }catch(e){toast(msgFS(e))}
+    t.disabled=false;t.textContent='Carregar demonstração';delete t.dataset.arm;
+  },
   admDel:async(d,t)=>{
     if(!isSuper())return;
     if(!t.dataset.arm){t.dataset.arm=1;t.textContent='Toque de novo para remover';return}
@@ -860,6 +921,8 @@ const clean=o=>JSON.parse(JSON.stringify(o));
 // cada usuário grava somente em u/{uid}/...
 const base=()=>'u/'+FB.user.uid+'/';
 function novoS(){
+  const dm=!isSuper()&&FB.user&&DEMO_EMAILS[(FB.user.email||'').toLowerCase()];
+  if(dm)return demoFazenda(dm);
   if(isSuper())return seed();
   const e=emptyState();e.cfg.fazenda=(CONTA&&CONTA.fazenda)||'Minha fazenda';return e;
 }
