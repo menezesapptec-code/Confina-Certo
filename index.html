@@ -6,9 +6,8 @@
 <meta name="theme-color" content="#14301f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" id="lk-icon" href="data:,">
+<link rel="apple-touch-icon" id="lk-apple" href="data:,">
 <title>Confina Certo</title>
 <style>
 :root{--bg:#f3efe6;--card:#fffdf8;--ink:#1d2a22;--mut:#66756b;--green:#14301f;--green2:#1f6a42;--lime:#7fb069;--amber:#e0a526;--red:#c2452d;--line:#e3dccd}
@@ -161,6 +160,11 @@ a.row{color:inherit}
 #splash{position:fixed;inset:0;z-index:200;background:#02050d;display:flex;align-items:center;justify-content:center;transition:opacity .5s}
 #splash.out{opacity:0;pointer-events:none}
 #splash img{width:100%;height:100%;object-fit:contain;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 14%,#000 86%,transparent),linear-gradient(to right,transparent,#000 8%,#000 92%,transparent);-webkit-mask-composite:source-in;mask-image:linear-gradient(to bottom,transparent,#000 14%,#000 86%,transparent),linear-gradient(to right,transparent,#000 8%,#000 92%,transparent);mask-composite:intersect}
+.hid{display:none!important}
+.gate-ic{font-size:40px;text-align:center;margin-bottom:6px}
+.contas .row{cursor:default;align-items:flex-start}
+.contas .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.nav-b{background:var(--amber);color:#2b1d00;border-radius:99px;font-size:11px;padding:1px 7px;margin-left:auto}
 </style>
 </head>
 <body>
@@ -174,12 +178,17 @@ a.row{color:inherit}
   </div>
   <nav id="tabs"></nav>
 </div>
-<div id="login" class="login hidden"><div class="box"><img src="icon-192.png" alt=""><h1>Confina Certo</h1><p class="sub">Gestão de trato e confinamento</p>
-<form data-form="login"><label>E-mail</label><input id="lg-e" type="email" autocomplete="username" required>
-<label>Senha</label><input id="lg-s" type="password" autocomplete="current-password" required minlength="6">
+<div id="login" class="login hidden"><div class="box"><img data-ic alt=""><h1>Confina Certo</h1><p class="sub" id="lg-sub">Gestão de trato e confinamento</p>
+<form data-form="login">
+<div id="lg-reg" class="hid"><label for="lg-fz">Nome da fazenda</label><input id="lg-fz" type="text" autocomplete="organization">
+<label for="lg-nm">Seu nome</label><input id="lg-nm" type="text" autocomplete="name">
+<label for="lg-wa">WhatsApp (opcional)</label><input id="lg-wa" type="tel" autocomplete="tel"></div>
+<label for="lg-e">E-mail</label><input id="lg-e" type="email" autocomplete="username" required>
+<label for="lg-s">Senha</label><input id="lg-s" type="password" autocomplete="current-password" required minlength="6">
 <div class="err" id="lg-err"></div>
-<button class="btn block" style="margin-top:8px">Entrar</button>
-<button type="button" class="btn line block" style="margin-top:8px" data-act="loginCreate">Primeiro acesso — criar conta</button></form></div></div>
+<button class="btn block" id="lg-go" style="margin-top:8px">Entrar</button>
+<button type="button" class="btn line block" id="lg-tg" style="margin-top:8px" data-act="loginMode">Primeiro acesso — criar conta</button></form></div></div>
+<div id="gate" class="login hidden"><div class="box" id="gate-box"></div></div>
 <div id="modal" class="modal hidden"><div class="sheet" id="sheet"></div></div>
 <div id="toast"></div>
 
@@ -220,7 +229,11 @@ const FB={on:false,user:null,ready:false};
 let AUTH=null,DB=null,FS=null;
 const COLS=['areas','lotes','animais','insumos','compras','formulas','batidas','forn'];
 const SYNC={last:new Map(),unsubs:[],remote:null,got:null,serverCfg:false,seeded:false,timer:null};
-const isAdmin=()=>!FB.on||(FB.user&&ADMINS.includes((FB.user.email||'').toLowerCase()));
+const ICON192='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAADkklEQVR4nO3dLY4UURiF4YaQsAE8LAGBQWLZChqPR7MVLBLDItgGDkFCJhAGmDNd93y3nseOqPvz1q2umaTnwZPnTy9wVw9XD4DZBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEBEREQEQERERARAREREBEHq0eQJ0vbx/f8tMX778dNpIRHjx5/nT1GNa7PZo/EdPl5AHdrZvfnbmkkwZ0X+ncdM6MThfQNdK56WwZnSiga6dz03kyOstr/JH1HH+5hU4R0JLtPElDmz/CGnZx78fZzidQQz2XmmFcybYBVW1b1WDu154BFW5Y4ZDuxYYB1W5V7cASuwVUvknlw7uD3QLiYFsFNOL+HjHIf7dPQIM2ZtBQ/2qTgMZtybgB/8kmAbHKDgENvZuHDvsX4wMavQ2jB//D+IBYa3ZAG9zB06cwOyCWGxzQ9Hv3p9ETGRwQDaYGNPqu/d3c6UwNiBICIjIyoLkH/i2GTmpkQPSYF9DQO/VfTJzavICoIiAiAiIyLKCJnxL+y7gJDguINgIiIiAikwIa9/ngbmZNc1JAFBIQEQERERARAREZE9Csd5PQoMmOCYhOAiIiICIrv2j866fPqy69mWevXq66tBOIiICICIiIgIgIiIiAiAiIyPp/OOe3QYmFvwH6wQlEREBEBERkfUDLn+JzNSzd+oAYTUBEKgJqOIrHKVm0ioCYS0BEWgIqOZCn6FmuloAYSkBEigLqOZbLVS1UUUBMJCAiXQFVHc6d2paoKyDGERARARGpC6jtGV+lcHHqAmIWARFpDKjwoG7QuSyNATGIgIiUBtR5XC9UuyClATGFgIj0BlR7aB+veSl6A2IEAREREJHqgJqf/YcpX4TqgOgnICLtAZUf4NfWP/32gCi3/ltaGc0JRERARB6tHsBB3rx7ffxFP7z7ePxFD3aKE2hJPQuve6T9A1q7i9s3tH9AXJWAiAiIyP4BrX0V2v5FbP+ALut2cft6Lv6UQegUJxDXIyAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIiIgIgIiIiAiAiIiICICIvId1WJwNxdJbkcAAAAASUVORK5CYII=',ICON512='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7GkOtAAAKYklEQVR4nO3dMXIcxxWAYdClKl2AOX0EBk4UOvVVHDtX7thXcapQiQ+hayhzQJcNEwS42J2e7un/+3JWbc30vH/ekgQ+fPz86QmAnj/M/gAAzCEAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQ9cPsDwBn+NfffnzvH/nT338f8UlgHR8+fv40+zPAke6Y9bdTBXYiAOxg6NB/jRhwdQLAVU0Z+q8RA65IALiYpeb+S0rAhQgA17D43H9JCVifALC6y43+52SAlQkAi7r03H9JCViQALCczUb/czLAUgSAhWw8+p+TARYhACwhMvqfkwGmEwAmC47+52SAifwwOGaKT/8nV4CpbADMYfB9xSrA+WwATGD6v+SacD4bAKcy5r7LKsBpbACcx/S/havEaWwAnMFQu4NVgNFsAAxn+t/HdWM0AWAsU+wRrh5D+QqIUQyvA/k6iBFsAAxh+h/L9WQEAeB4ptUIriqHEwAOZk6N49pyLAHgSCbUaK4wBxIADmM2ncN15ij+FRAHMJKm8E+DeJANgEeZ/rO48jxIAHiIGTSX688jBID7mT4rcBe4mwBwJ3NnHe4F9xEA7mHirMYd4Q4CABAlALybl801uS+8lwDwPqbMytwd3kUAeAfzZX3uEbcTAG5lslyFO8WNBICbmCnX4n5xCwHg+0yTK3LX+C4BAIgSAL7Di+R1uXe8TQB4iwlyde4gbxAAXmV27MF95DUCABAlAHyb18aduJt8kwDwDebFftxTXhIAvmZS7Mqd5SsCABAlAPwfL4l7c395TgD4H9OhwF3mvwQAIEoA+A8vhh3uNV8IAECUAPD05JWwxx3nSQB4Mguq3HcEACBKAOq8Bpa5+3ECABAlAGleAHEGygQAIEoAurz68YWTkCUAUZ55nnMemgQAIEoAirzu8ZJTESQAAFECkONFj9c4GzUCABAlAABRAtBix+dtTkiKAABECUCIlztu4Zx0CABAlABUeK3jdk5LhAAARAkAQJQAJNjoeS9npkAAAKIEYH9e5biPk7M9AQCIEgCAKAHYnC2eRzg/exMAgCgBAIgSgJ3Z33mcU7QxAQCIEgCAKAHYls2dozhLuxIAgCgBAIgSgD3Z2TmWE7UlAQCIEgCAKAHYkG2dEZyr/QgAQJQAAEQJAECUAOzGF7WM43RtRgAAogQAIEoAAKIEYCu+omU0Z2wnAgAQJQAAUQIAECUAAFECsA9/O8c5nLRtCABAlAAARAkAQJQAAEQJwCb8vRxnct72IAAAUQIAECUAAFECABAlAABRAgAQJQA78G/yOJ9TtwEBAIgSAIAoAQCIEgCAKAEAiBIAgCgBAIgSAIAoAQCIEoDL8x8ymcXZuzoBAIgSAICoDx8/f5r9GTbx2y+/zv4IUPHHP/80+yPswAYAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFF+KfwQfkE8HM4vgj+cDQAgSgAAogRgCLsqHMszNYIAAEQJAECUAIxiY4WjeJoGEQCAKAEAiBKAgeyt8DjP0TgCABAlAABRAjCW7RUe4QkaSgAAogQAIEoAhrPDwn08O6MJAECUAABECQBAlACcwVeZ8F6emhMIAECUAABECcBJ7LNwO8/LOQQAIEoAAKIE4Dy2WriFJ+U0AgAQJQAAUQJwKrstvM0zciYBAIgSAIAoATibDRde4+k4mQAARAkAQJQATGDPhZc8F+cTAIAoAQCIEoA5bLvwnCdiCgEAiBIAgCgBmMbOC194FmYRAIAoAQCIEoCZbL7gKZhIAACiBAAgSgAms/9S5vzPJQAAUQIAECUA89mCaXLypxMAgCgBAIgSgCXYhalx5lcgAABRAgAQJQCrsBHT4bQvQgAAogQAIEoAFmIvpsA5X4cAAEQJAECUAKzFdszenPClCABAlAAARAnAcuzI7MrZXo0AAEQJAECUAKzIpsx+nOoFCQBAlAAARAnAouzL7MR5XpMAAEQJAECUAABECcC6fG3KHpzkZQkAQJQAAEQJwNLszlydM7wyAQCIEgCAKAFYnQ2a63J6FycAAFECABAlABdgj+aKnNv1CQBAlAAARAnANdimuRYn9hIEACBKAACiBOAy7NRchbN6FQIAECUAAFECcCU2a9bnlF6IAABECQBAlABcjP2alTmf1yIAAFECABAlANdjy2ZNTublCABA1IePnz/N/gwATGADAIgSAIAoAQCIEgCAKAEAiBIAgCgBAIgSAICoH2Z/AEL++vNfZn+Ea/jHz/+c/RFI8D+BOYPRfwcZYDRfATGc6X8f143RBICxTLFHuHoMJQAMZH49zjVkHAFgFJPrKK4kgwgAQJQAMISX1mO5nowgAABRAgAQJQAAUQIAECUAAFECABAlAAzhB5kdy/VkBAEAiBIARvHSehRXkkEEgIFMrse5howjAIxlfj3C1WMoAWA4U+w+rhuj+ZWQnMdPNLuR0c85BAAgyldAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABAlAABRAgAQJQAAUQIAECUAAFECABD1b2ipHcLDU76qAAAAAElFTkSuQmCC';
+const isSuper=()=>!!(FB.user&&ADMINS.includes((FB.user.email||'').toLowerCase()));
+const isOwner=()=>true; // cada usuário é dono dos próprios dados
+const ADM={contas:[],unsub:null};
+let CONTA=null,CONTA_UNSUB=null,SIGNUP=false,loginMode='in';
 
 /* ================= dados (estrutura da planilha Recomeço) ================= */
 let S=null;
@@ -326,6 +339,7 @@ const IC={
  formulas:'<path d="M9 3h6M10 3v6L5 19a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-10V3"/>',
  batida:'<path d="M4 9h16l-2 10H6L4 9Z"/><path d="M8 9V6a4 4 0 0 1 8 0v3M12 13v3"/>',
  hist:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ admin:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/>',
  config:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
  mais:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>'
 };
@@ -333,14 +347,16 @@ const ico=n=>'<svg class="ic" viewBox="0 0 24 24">'+IC[n]+'</svg>';
 const NAV=[['painel','Painel'],['lotes','Lotes'],['animais','Animais'],['batida','Batida'],['hist','Fornecimento'],['formulas','Formulações'],['insumos','Insumos'],['compras','Compras'],['areas','Pastos e baias'],['config','Ajustes']];
 const TABS=[['painel','Painel'],['lotes','Lotes'],['batida','Batida'],['insumos','Insumos'],['mais','Mais']];
 const MAIS=['animais','hist','formulas','compras','areas','config'];
-const TITULOS={painel:'Painel',lotes:'Lotes',animais:'Animais',batida:'Batida',hist:'Histórico de fornecimento',formulas:'Formulações',insumos:'Lista de insumos',compras:'Compra de insumos',areas:'Pastos e baias',config:'Ajustes',mais:'Mais'};
+const TITULOS={admin:'Administração',painel:'Painel',lotes:'Lotes',animais:'Animais',batida:'Batida',hist:'Histórico de fornecimento',formulas:'Formulações',insumos:'Lista de insumos',compras:'Compra de insumos',areas:'Pastos e baias',config:'Ajustes',mais:'Mais'};
 let view='painel',deferredInstall=null,BT=null,FD=null,fHist='';
 
+const pend=()=>ADM.contas.filter(c=>c.status==='pendente').length;
+const navList=()=>NAV.concat(isSuper()?[['admin','Administração']]:[]);
 function chrome(){
   if(!S)return;
-  $('#side').innerHTML='<div class="brand"><img src="icon-192.png" alt="">Confina Certo</div>'+NAV.map(([id,t])=>'<a href="#'+id+'" class="'+(view===id?'on':'')+'">'+ico(id)+t+'</a>').join('');
-  $('#tabs').innerHTML=TABS.map(([id,t])=>{const on=view===id||(id==='mais'&&(MAIS.includes(view)||view==='mais'));return '<a href="#'+id+'" class="'+(on?'on':'')+'">'+ico(id)+t+'</a>'}).join('');
-  $('#top').innerHTML='<img class="logo" src="icon-192.png" alt=""><div><h1>'+esc(TITULOS[view]||'')+'</h1><small>'+esc(S.cfg.fazenda)+'</small></div><div class="sp"></div><div class="net'+(navigator.onLine?'':' off')+'"><i></i>'+netLabel()+'</div>';
+  $('#side').innerHTML='<div class="brand"><img src="'+ICON192+'" alt="">Confina Certo</div>'+navList().map(([id,t])=>'<a href="#'+id+'" class="'+(view===id?'on':'')+'">'+ico(id)+t+(id==='admin'&&pend()?'<span class="nav-b">'+pend()+'</span>':'')+'</a>').join('');
+  $('#tabs').innerHTML=TABS.map(([id,t])=>{const on=view===id||(id==='mais'&&(MAIS.includes(view)||view==='mais'||view==='admin'));return '<a href="#'+id+'" class="'+(on?'on':'')+'">'+ico(id)+t+'</a>'}).join('');
+  $('#top').innerHTML='<img class="logo" src="'+ICON192+'" alt=""><div><h1>'+esc(TITULOS[view]||'')+'</h1><small>'+esc(S.cfg.fazenda)+'</small></div><div class="sp"></div><div class="net'+(navigator.onLine?'':' off')+'"><i></i>'+netLabel()+'</div>';
 }
 function netLabel(){return !navigator.onLine?'Offline · salvo no aparelho':FB.on?'Online · sincronizado':'Modo local'}
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2800)}
@@ -350,7 +366,7 @@ const opts=(arr,val,vazio)=>(vazio!=null?'<option value="">'+esc(vazio)+'</optio
 const fld=(id,lb,val,o)=>{o=o||{};return '<div'+(o.cls?' class="'+o.cls+'"':'')+'><label for="'+id+'">'+lb+'</label><input id="'+id+'" '+(o.type==='date'?'type="date"':'type="text" inputmode="'+(o.txt?'text':'decimal')+'"')+' value="'+esc(val==null?'':val)+'"'+(o.ph?' placeholder="'+esc(o.ph)+'"':'')+'></div>'};
 const selF=(id,lb,list,val,vazio,cls)=>'<div'+(cls?' class="'+cls+'"':'')+'><label for="'+id+'">'+lb+'</label><select id="'+id+'">'+opts(list,val,vazio)+'</select></div>';
 const kv=(l,v)=>'<div><small>'+l+'</small><b>'+v+'</b></div>';
-const delBtn=(k,id)=>isAdmin()?'<button type="button" class="btn line block" style="margin-top:10px;color:var(--red)" data-act="del" data-k="'+k+'" data-id="'+id+'">Excluir</button>':'';
+const delBtn=(k,id)=>isOwner()?'<button type="button" class="btn line block" style="margin-top:10px;color:var(--red)" data-act="del" data-k="'+k+'" data-id="'+id+'">Excluir</button>':'';
 const head=(t,sub,btn)=>'<div class="pgh"><div><h2>'+t+'</h2>'+(sub?'<p>'+sub+'</p>':'')+'</div>'+(btn||'')+'</div>';
 
 /* ================= telas ================= */
@@ -364,6 +380,7 @@ VIEWS.painel=()=>{
   const forn30=sum(S.forn.filter(h=>h.data>addDias(hoje(),-30)),h=>h.valor);
   const kg30=sum(S.forn.filter(h=>h.data>addDias(hoje(),-30)),h=>h.kg);
   const al=[];
+  if(isSuper()&&pend())al.push(['warn',pend()+' pedido(s) de acesso aguardando liberação.','admin']);
   S.insumos.forEach(i=>{const c=compraCalc(i.id);
     if(c.comprado&&c.estoque<=0)al.push(['bad','Estoque de '+i.nome+' zerado ou negativo ('+fmt(c.estoque)+' kg) — confira compras e batidas.','insumos']);
     else{const u=usoMedio7(i.id);if(u>0&&c.estoque/u<7)al.push(['warn',i.nome+': estoque para ~'+fmt(c.estoque/u,1)+' dias ('+fmt(c.estoque)+' kg).','insumos'])}});
@@ -444,12 +461,30 @@ VIEWS.hist=()=>{
     return '<tr data-act="forn" data-id="'+h.id+'" style="cursor:pointer"><td><b>'+esc(a?a.nome:'(removido)')+'</b><br><span class="mut">'+fmtData(h.data)+'</span></td><td>'+esc(h.nome)+'</td><td>'+fmt(h.kg)+'</td><td>'+brl(h.valor)+'</td></tr>'}).join('')+'</table></div></div>';
 };
 
-VIEWS.mais=()=>'<div class="card">'+[['animais','Animais','Cadastro individual por brinco'],['hist','Histórico de fornecimento','O que foi dado em cada pasto'],['formulas','Formulações','Receitas, custo e nutrientes'],['compras','Compra de insumos','Entradas de matéria-prima'],['areas','Pastos e baias','Áreas cadastradas'],['config','Ajustes','Listas, conta e instalação']].map(([id,t,s])=>'<a class="row" href="#'+id+'"><div class="g"><b>'+t+'</b><span>'+s+'</span></div>'+ico(id)+'</a>').join('')+'</div>';
+VIEWS.admin=()=>{
+  if(!isSuper())return '<div class="card empty">Acesso restrito ao administrador.</div>';
+  const grupos=[['pendente','Aguardando liberação'],['liberado','Liberados'],['bloqueado','Bloqueados']];
+  const dt=iso=>iso?fmtData(iso.slice(0,10)):'—';
+  let h=head('Administração',ADM.contas.length+' conta(s) · '+pend()+' aguardando liberação');
+  if(!ADM.contas.length)return h+'<div class="card empty">Nenhum cadastro ainda. Quando alguém criar uma conta, aparece aqui.</div>';
+  grupos.forEach(([st,tt])=>{
+    const L=ADM.contas.filter(c=>(c.status||'pendente')===st).sort((a,b)=>String(b.criadoEm||'').localeCompare(String(a.criadoEm||'')));
+    if(!L.length)return;
+    h+='<div class="linha">'+tt+' ('+L.length+')</div><div class="card contas">'+L.map(c=>
+      '<div class="row"><div class="g"><b>'+esc(c.fazenda||'(sem nome)')+'</b><span>'+esc(c.nome||'')+(c.nome?' · ':'')+esc(c.email||'')+(c.whats?' · '+esc(c.whats):'')+'</span><span style="display:block;font-size:12px">Cadastro em '+dt(c.criadoEm)+(c.decididoEm?' · decisão em '+dt(c.decididoEm):'')+'</span>'
+      +'<div class="acts">'+(st!=='liberado'?'<button class="btn sm" data-act="admSet" data-id="'+esc(c.id)+'" data-st="liberado">Liberar acesso</button>':'')
+      +(st!=='bloqueado'?'<button class="btn sm sec" data-act="admSet" data-id="'+esc(c.id)+'" data-st="bloqueado">'+(st==='pendente'?'Recusar':'Bloquear')+'</button>':'')
+      +'<button class="btn sm line" style="color:var(--red)" data-act="admDel" data-id="'+esc(c.id)+'">Remover</button></div></div></div>').join('')+'</div>';
+  });
+  return h+'<p class="note">Liberar dá acesso imediato (o cliente vê a tela mudar sozinho). Cada cliente enxerga só os dados da própria fazenda.</p>';
+};
+
+VIEWS.mais=()=>'<div class="card">'+(isSuper()?[['admin','Administração','Liberar acessos'+(pend()?' · '+pend()+' pendente(s)':'')]]:[]).concat([['animais','Animais','Cadastro individual por brinco'],['hist','Histórico de fornecimento','O que foi dado em cada pasto'],['formulas','Formulações','Receitas, custo e nutrientes'],['compras','Compra de insumos','Entradas de matéria-prima'],['areas','Pastos e baias','Áreas cadastradas'],['config','Ajustes','Listas, conta e instalação']]).map(([id,t,s])=>'<a class="row" href="#'+id+'"><div class="g"><b>'+t+'</b><span>'+s+'</span></div>'+ico(id)+'</a>').join('')+'</div>';
 
 VIEWS.config=()=>{
-  const L=S.cfg.listas,ad=isAdmin(),ta=(k,t)=>'<label>'+t+' (um por linha)</label><textarea id="ls-'+k+'" rows="6" '+(ad?'':'disabled')+'>'+esc((L[k]||[]).join('\n'))+'</textarea>';
-  return head('Ajustes',FB.on&&FB.user?esc(FB.user.email):'Modo local')
-   +'<div class="card"><h3>Fazenda</h3>'+fld('cf-nome','Nome da fazenda',S.cfg.fazenda,{txt:1})+(ad?'<button class="btn block" style="margin-top:12px" data-act="saveCfg">Salvar</button>':'<p class="note">Somente administradores alteram os ajustes.</p>')+'</div>'
+  const L=S.cfg.listas,ad=isOwner(),ta=(k,t)=>'<label>'+t+' (um por linha)</label><textarea id="ls-'+k+'" rows="6" '+(ad?'':'disabled')+'>'+esc((L[k]||[]).join('\n'))+'</textarea>';
+  return head('Ajustes',FB.on&&FB.user?esc(FB.user.email)+(isSuper()?' · administrador':''):'Modo local')
+   +'<div class="card"><h3>Fazenda</h3>'+fld('cf-nome','Nome da fazenda',S.cfg.fazenda,{txt:1})+'<button class="btn block" style="margin-top:12px" data-act="saveCfg">Salvar</button>'+'</div>'
    +'<div class="card"><h3>Listas de opções</h3>'+ta('categorias','Categorias de insumo')+ta('catAnimal','Categorias animais')+ta('racas','Raças')+ta('tipos','Tipos de fórmula')+'</div>'
    +(deferredInstall?'<div class="card"><button class="btn block" data-act="install">Instalar no aparelho</button></div>':'')
    +(FB.on?'<div class="card"><button class="btn line block" data-act="logout">Sair da conta</button></div>':'')
@@ -601,7 +636,7 @@ function mForn(id){
   const h=byId(S.forn,id),a=area(h.areaId);
   sheet('<h2>'+esc(a?a.nome:'Fornecimento')+'</h2><div class="kv">'+kv('Data',fmtData(h.data))+kv('Quantidade',fmt(h.kg)+' kg')+kv('Valor',brl(h.valor))+'</div><p class="note" style="margin-top:0">Fórmula <b>'+esc(h.nome)+'</b> — receita gravada no dia do fornecimento:</p>'
    +'<div class="card" style="margin-top:8px">'+(h.snap||[]).map(g=>{const i=insumo(g.id);return '<div class="ing"><span>'+esc(i?i.nome:'(removido)')+'</span><b>'+fmt(g.pct,2)+'% · '+fmt(h.kg*g.pct/100,1)+' kg</b></div>'}).join('')+'</div>'
-   +delBtn('forn',id)+(h.batidaId&&byId(S.batidas,h.batidaId)?(isAdmin()?'<button type="button" class="btn line block" style="margin-top:8px;color:var(--red)" data-act="del" data-k="batidas" data-id="'+h.batidaId+'">Excluir a batida inteira (devolve o estoque)</button>':''):''));
+   +delBtn('forn',id)+(h.batidaId&&byId(S.batidas,h.batidaId)?(isOwner()?'<button type="button" class="btn line block" style="margin-top:8px;color:var(--red)" data-act="del" data-k="batidas" data-id="'+h.batidaId+'">Excluir a batida inteira (devolve o estoque)</button>':''):''));
 }
 
 /* ===== formulários ===== */
@@ -720,16 +755,26 @@ const ACT={
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='fornecimento-'+hoje()+'.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
   },
   saveCfg:()=>{
-    if(!isAdmin())return toast('Somente administradores');
     const n=$('#cf-nome').value.trim();if(n)S.cfg.fazenda=n;
     ['categorias','catAnimal','racas','tipos'].forEach(k=>{const v=$('#ls-'+k).value.split('\n').map(x=>x.trim()).filter(Boolean);if(v.length)S.cfg.listas[k]=v});
-    save();render(false);toast('Ajustes salvos');
+    save();
+    if(FB.on&&FB.user&&!isSuper()&&n){FS.setDoc(FS.doc(DB,'contas/'+FB.user.uid),{fazenda:n},{merge:true}).catch(()=>{})}
+    render(false);toast('Ajustes salvos');
   },
   install:async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;render(false)}},
   logout:()=>{if(AUTH)AUTH.out()},
-  loginCreate:()=>authDo('create'),
+  loginMode:()=>setLoginMode(loginMode==='in'?'reg':'in'),
+  admSet:async(d)=>{
+    if(!isSuper())return;
+    try{await FS.setDoc(FS.doc(DB,'contas/'+d.id),{status:d.st,decididoEm:new Date().toISOString(),decididoPor:FB.user.email},{merge:true});toast(d.st==='liberado'?'Acesso liberado':'Acesso '+(d.st==='bloqueado'?'bloqueado':'atualizado'))}catch(e){toast(msgFS(e))}
+  },
+  admDel:async(d,t)=>{
+    if(!isSuper())return;
+    if(!t.dataset.arm){t.dataset.arm=1;t.textContent='Toque de novo para remover';return}
+    try{await FS.deleteDoc(FS.doc(DB,'contas/'+d.id));toast('Cadastro removido')}catch(e){toast(msgFS(e))}
+  },
   del:(d,t)=>{
-    if(!isAdmin())return toast('Somente administradores podem excluir');
+    if(!isOwner())return toast('Somente administradores podem excluir');
     if(!t.dataset.arm){t.dataset.arm=1;t.textContent='Toque de novo para confirmar a exclusão';return}
     const k=d.k,id=d.id;
     if(k==='lotes'&&S.animais.some(a=>a.loteId===id))S.animais.forEach(a=>{if(a.loteId===id)a.loteId=''});
@@ -749,7 +794,8 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('submit',e=>{
   const f=e.target.closest('[data-form]');if(!f)return;e.preventDefault();
-  if(f.dataset.form==='login'){authDo('in');return}
+  if(f.dataset.form==='login'){authDo(loginMode);return}
+  if(f.dataset.form==='conta'){contaCreate();return}
   FORMS[f.dataset.form]();
 });
 document.addEventListener('input',e=>{
@@ -787,9 +833,15 @@ function render(top){
   window.scrollTo(0,top?0:y);
 }
 
-/* ================= Firebase: login + sincronização ================= */
+/* ================= Firebase: login, liberação de acesso e sincronização ================= */
 const canon=o=>JSON.stringify(o,(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a<b?-1:a>b?1:0)):v);
 const clean=o=>JSON.parse(JSON.stringify(o));
+// cada usuário grava somente em u/{uid}/...
+const base=()=>'u/'+FB.user.uid+'/';
+function novoS(){
+  if(isSuper())return seed();
+  const e=emptyState();e.cfg.fazenda=(CONTA&&CONTA.fazenda)||'Minha fazenda';return e;
+}
 function docsOf(){
   const m=new Map();
   m.set('cfg/main',S.cfg);
@@ -797,14 +849,14 @@ function docsOf(){
   return m;
 }
 function flush(){
-  if(!FB.on||!FB.ready||!S||!DB)return;
-  const want=docsOf();
+  if(!FB.on||!FB.ready||!S||!DB||!FB.user)return;
+  const want=docsOf(),b=base();
   want.forEach((o,p)=>{
     const j=canon(o);
-    if(SYNC.last.get(p)!==j){SYNC.last.set(p,j);FS.setDoc(FS.doc(DB,p),clean(o)).catch(e=>toast(msgFS(e)))}
+    if(SYNC.last.get(p)!==j){SYNC.last.set(p,j);FS.setDoc(FS.doc(DB,b+p),clean(o)).catch(e=>toast(msgFS(e)))}
   });
   [...SYNC.last.keys()].forEach(p=>{
-    if(!want.has(p)){SYNC.last.delete(p);FS.deleteDoc(FS.doc(DB,p)).catch(e=>toast(msgFS(e)))}
+    if(!want.has(p)){SYNC.last.delete(p);FS.deleteDoc(FS.doc(DB,b+p)).catch(e=>toast(msgFS(e)))}
   });
 }
 function rebuild(){
@@ -824,7 +876,7 @@ const needSeed=()=>SYNC.serverCfg&&!SYNC.seeded&&!temV3()&&!SYNC.remote.areas.si
 function tryReady(){
   if(SYNC.got.size<COLS.length+1)return;
   if(temV3())return goReady(false);
-  if(needSeed()){S=seed();goReady(true)}
+  if(needSeed()){S=novoS();goReady(true)}
 }
 function onSnap(name,snap){
   const m=SYNC.remote[name];m.clear();
@@ -833,7 +885,7 @@ function onSnap(name,snap){
   if(name==='cfg'&&!snap.metadata.fromCache)SYNC.serverCfg=true;
   SYNC.got.add(name);
   if(!FB.ready)tryReady();
-  else if(needSeed()){S=seed();SYNC.seeded=true;flush();render(true)}
+  else if(needSeed()){S=novoS();SYNC.seeded=true;flush();render(true)}
   else{rebuild();if(!$('#modal')||$('#modal').classList.contains('hidden'))render(false)}
 }
 function startSync(){
@@ -841,11 +893,12 @@ function startSync(){
   SYNC.remote={cfg:new Map()};COLS.forEach(c=>SYNC.remote[c]=new Map());
   SYNC.got=new Set();SYNC.serverCfg=false;SYNC.seeded=false;
   S=emptyState();
-  $('#view').innerHTML='<div class="empty">Sincronizando…</div>';
+  $('#view').innerHTML='<div class="empty">Carregando seus dados…</div>';
+  const b=base();
   ['cfg'].concat(COLS).forEach(n=>{
-    SYNC.unsubs.push(FS.onSnapshot(FS.collection(DB,n),snap=>onSnap(n,snap),e=>toast(msgFS(e))));
+    SYNC.unsubs.push(FS.onSnapshot(FS.collection(DB,b+n),snap=>onSnap(n,snap),e=>toast(msgFS(e))));
   });
-  SYNC.timer=setTimeout(()=>{if(!FB.ready){rebuild();FB.ready=true;render(true);toast('Sem resposta do servidor — mostrando dados do aparelho')}},7000);
+  SYNC.timer=setTimeout(()=>{if(!FB.ready)$('#view').innerHTML='<div class="empty">Conectando ao servidor… se demorar, confira a internet. Seus dados aparecem assim que a conexão voltar.</div>'},6000);
 }
 function stopSync(){
   SYNC.unsubs.forEach(u=>{try{u()}catch(e){}});SYNC.unsubs=[];clearTimeout(SYNC.timer);SYNC.last.clear();FB.ready=false;
@@ -864,30 +917,98 @@ function msgFS(x){
   if(c==='unavailable')return 'Servidor indisponível — salvo no aparelho, sincroniza depois.';
   return 'Firestore: '+(c||'erro');
 }
+function setLoginMode(m){
+  loginMode=m;const reg=m==='reg';
+  $('#lg-reg').classList.toggle('hid',!reg);
+  $('#lg-go').textContent=reg?'Enviar cadastro':'Entrar';
+  $('#lg-tg').textContent=reg?'Já tenho conta — entrar':'Primeiro acesso — criar conta';
+  $('#lg-sub').textContent=reg?'Cadastre sua fazenda. O acesso é liberado após aprovação.':'Gestão de trato e confinamento';
+  $('#lg-s').autocomplete=reg?'new-password':'current-password';
+  $('#lg-err').textContent='';
+}
 async function authDo(kind){
   const e=$('#lg-e').value.trim(),pw=$('#lg-s').value,er=$('#lg-err');er.textContent='';
   if(!AUTH){er.textContent='O Firebase não carregou. Verifique a conexão.';return}
-  try{if(kind==='in')await AUTH.signIn(e,pw);else await AUTH.create(e,pw)}catch(x){er.textContent=msgAuth(x)}
+  const reg=kind==='reg',fz=$('#lg-fz').value.trim(),nm=$('#lg-nm').value.trim(),wa=$('#lg-wa').value.trim();
+  if(reg&&!fz){er.textContent='Informe o nome da fazenda.';return}
+  const btn=$('#lg-go');btn.disabled=true;
+  try{
+    if(!reg)await AUTH.signIn(e,pw);
+    else{
+      SIGNUP=true;
+      const cred=await AUTH.create(e,pw);
+      await FS.setDoc(FS.doc(DB,'contas/'+cred.user.uid),{email:e.toLowerCase(),fazenda:fz,nome:nm,whats:wa,status:'pendente',criadoEm:new Date().toISOString()});
+      SIGNUP=false;
+    }
+  }catch(x){SIGNUP=false;er.textContent=x&&x.code&&x.code.startsWith('auth/')?msgAuth(x):msgFS(x)}
+  btn.disabled=false;
+}
+async function contaCreate(){
+  const fz=$('#ct-fz').value.trim();if(!fz)return toast('Informe o nome da fazenda');
+  try{await FS.setDoc(FS.doc(DB,'contas/'+FB.user.uid),{email:(FB.user.email||'').toLowerCase(),fazenda:fz,nome:$('#ct-nm').value.trim(),whats:$('#ct-wa').value.trim(),status:'pendente',criadoEm:new Date().toISOString()})}catch(e){toast(msgFS(e))}
+}
+function clearUI(){S=null;BT=null;FD=null;closeModal();$('#view').innerHTML='';$('#top').innerHTML='';$('#tabs').innerHTML='';$('#side').innerHTML=''}
+function showGate(c){
+  const box=$('#gate-box');
+  const ic=n=>'<div class="gate-ic">'+n+'</div>';
+  const out='<button type="button" class="btn line block" style="margin-top:14px" data-act="logout">Sair</button>';
+  let h;
+  if(!c&&SIGNUP)h=ic('⏳')+'<h1>Enviando cadastro…</h1>';
+  else if(!c)h='<h1>Complete seu cadastro</h1><p class="sub">Informe sua fazenda para pedir o acesso.</p><form data-form="conta"><label for="ct-fz">Nome da fazenda</label><input id="ct-fz" type="text"><label for="ct-nm">Seu nome</label><input id="ct-nm" type="text"><label for="ct-wa">WhatsApp (opcional)</label><input id="ct-wa" type="tel"><button class="btn block" style="margin-top:14px">Enviar cadastro</button></form>'+out;
+  else if(c.status==='bloqueado')h=ic('⛔')+'<h1>Acesso bloqueado</h1><p class="sub">O acesso desta conta está suspenso. Fale com o administrador.</p>'+out;
+  else h=ic('⏳')+'<h1>Cadastro recebido</h1><p class="sub"><b>'+esc(c.fazenda||'')+'</b><br>'+esc(c.email||'')+'</p><p class="sub" style="margin-top:12px">Aguarde a liberação do administrador. Esta tela muda sozinha quando o acesso for aprovado.</p>'+out;
+  box.innerHTML=h;$('#gate').classList.remove('hidden');
+}
+const hideGate=()=>$('#gate').classList.add('hidden');
+function startAdmin(){
+  stopAdmin();
+  ADM.unsub=FS.onSnapshot(FS.collection(DB,'contas'),snap=>{
+    ADM.contas=[];snap.forEach(d=>ADM.contas.push(Object.assign({id:d.id},d.data())));
+    if(S){chrome();if(view==='admin'||view==='painel'||view==='mais')render(false)}
+  },e=>toast(msgFS(e)));
+}
+function stopAdmin(){if(ADM.unsub){try{ADM.unsub()}catch(e){}ADM.unsub=null}ADM.contas=[]}
+function setIcons(){
+  document.querySelectorAll('img[data-ic]').forEach(i=>i.src=ICON192);
+  $('#lk-icon').href=ICON192;$('#lk-apple').href=ICON192;
+  try{
+    const man={name:'Confina Certo',short_name:'Confina Certo',start_url:location.origin+'/',scope:location.origin+'/',display:'standalone',orientation:'portrait',background_color:'#14301f',theme_color:'#14301f',lang:'pt-BR',
+      icons:[{src:ICON192,sizes:'192x192',type:'image/png',purpose:'any'},{src:ICON512,sizes:'512x512',type:'image/png',purpose:'any'}]};
+    const l=document.createElement('link');l.rel='manifest';l.href=URL.createObjectURL(new Blob([JSON.stringify(man)],{type:'application/manifest+json'}));document.head.appendChild(l);
+  }catch(e){}
 }
 async function boot(){
+  setIcons();
   let mods=null;
   try{mods=await Promise.all(['app','auth','firestore'].map(n=>import('https://www.gstatic.com/firebasejs/'+FBV+'/firebase-'+n+'.js')))}catch(e){mods=null}
   if(!mods){FB.on=false;load();render(true);toast('Modo local: o Firebase não carregou');return}
   const [A,Au,F]=mods;
   const app=A.initializeApp(FIREBASE_CONFIG);
   const auth=Au.getAuth(app);
-  try{DB=F.initializeFirestore(app,{localCache:F.persistentLocalCache({tabManager:F.persistentMultipleTabManager()})})}catch(e){DB=F.getFirestore(app)}
+  try{DB=F.initializeFirestore(app,{localCache:F.persistentLocalCache({tabManager:F.persistentMultipleTabManager()}),experimentalAutoDetectLongPolling:true})}catch(e){DB=F.getFirestore(app)}
   FS=F;
   AUTH={signIn:(e,p)=>Au.signInWithEmailAndPassword(auth,e,p),create:(e,p)=>Au.createUserWithEmailAndPassword(auth,e,p),out:()=>Au.signOut(auth)};
   FB.on=true;
   Au.onAuthStateChanged(auth,user=>{
     FB.user=user;
-    if(user){$('#login').classList.add('hidden');startSync()}
-    else{
-      stopSync();S=null;BT=null;FD=null;closeModal();
-      $('#view').innerHTML='';$('#top').innerHTML='';$('#tabs').innerHTML='';$('#side').innerHTML='';
+    stopSync();stopAdmin();if(CONTA_UNSUB){try{CONTA_UNSUB()}catch(e){}CONTA_UNSUB=null}CONTA=null;
+    if(!user){
+      clearUI();hideGate();setLoginMode('in');
       $('#lg-s').value='';$('#lg-err').textContent='';$('#login').classList.remove('hidden');
+      return;
     }
+    $('#login').classList.add('hidden');
+    if(isSuper()){hideGate();startSync();startAdmin();return}
+    CONTA_UNSUB=FS.onSnapshot(FS.doc(DB,'contas/'+user.uid),snap=>{
+      const c=snap.exists()?snap.data():null;CONTA=c;
+      if(c&&c.status==='liberado'){
+        hideGate();
+        if(!SYNC.unsubs.length)startSync();
+      }else{
+        if(SYNC.unsubs.length||S){stopSync();clearUI()}
+        showGate(c);
+      }
+    },e=>{toast(msgFS(e));showGate(null)});
   });
 }
 boot();
