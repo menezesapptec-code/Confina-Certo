@@ -555,6 +555,7 @@ VIEWS.config=()=>{
   return head('Ajustes',FB.on&&FB.user?esc(FB.user.email)+(isSuper()?' · administrador':''):'Modo local')
    +'<div class="card"><h3>Fazenda</h3>'+fld('cf-nome','Nome da fazenda',S.cfg.fazenda,{txt:1})+'<button class="btn block" style="margin-top:12px" data-act="saveCfg">Salvar</button>'+'</div>'
    +'<div class="card"><h3>Listas de opções</h3>'+ta('categorias','Categorias de insumo')+ta('catAnimal','Categorias animais')+ta('racas','Raças')+ta('tipos','Tipos de fórmula')+'</div>'
+   +((!S.animais.length&&!S.lotes.length)?'<div class="card"><h3>Dados de demonstração</h3><p class="note" style="margin:6px 0 12px">Carrega 200 animais de exemplo, 4 lotes, fórmulas, compras e 10 dias de histórico para você conhecer o sistema. Só aparece enquanto a fazenda está vazia.</p><button class="btn block" data-act="demoSelf">Carregar 200 animais de demonstração</button></div>':'')
    +(deferredInstall?'<div class="card"><button class="btn block" data-act="install">Instalar no aparelho</button></div>':'')
    +(FB.on?'<div class="card"><button class="btn line block" data-act="logout">Sair da conta</button></div>':'')
    +'<p class="note">Os dados são salvos no aparelho e sincronizam quando houver internet.</p>';
@@ -836,6 +837,12 @@ const ACT={
   admSet:async(d)=>{
     if(!isSuper())return;
     try{await FS.setDoc(FS.doc(DB,'contas/'+d.id),{status:d.st,decididoEm:new Date().toISOString(),decididoPor:FB.user.email},{merge:true});toast(d.st==='liberado'?'Acesso liberado':'Acesso '+(d.st==='bloqueado'?'bloqueado':'atualizado'))}catch(e){toast(msgFS(e))}
+  },
+  demoSelf:()=>{
+    if(S.animais.length||S.lotes.length)return toast('A fazenda já tem dados');
+    const listas=S.cfg.listas,nome=S.cfg.fazenda;
+    S=demoFazenda(nome);S.cfg.listas=Object.assign({},LISTAS0,listas);
+    save();location.hash='#painel';render(true);toast('Demonstração carregada: '+S.animais.length+' animais');
   },
   admDemo:async(d,t)=>{
     if(!isSuper())return;
