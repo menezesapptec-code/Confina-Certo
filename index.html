@@ -161,6 +161,11 @@ a.row{color:inherit}
 #splash.out{opacity:0;pointer-events:none}
 #splash img{width:100%;height:100%;object-fit:contain;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 14%,#000 86%,transparent),linear-gradient(to right,transparent,#000 8%,#000 92%,transparent);-webkit-mask-composite:source-in;mask-image:linear-gradient(to bottom,transparent,#000 14%,#000 86%,transparent),linear-gradient(to right,transparent,#000 8%,#000 92%,transparent);mask-composite:intersect}
 .hid{display:none!important}
+.topout{border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;border-radius:99px;padding:6px 14px;font-weight:700;font-size:13px;white-space:nowrap}
+.side-out{margin-top:auto}
+body.adm #tabs{display:none}
+body.adm #view{padding-bottom:40px}
+@media(max-width:480px){.net:not(.off) .nl{display:none}.net{padding:4px 8px}}
 .seg{display:grid;grid-template-columns:1fr 1fr;background:#e8e2d3;border-radius:12px;padding:4px;margin:12px 0 4px}
 .seg button{border:0;background:transparent;border-radius:9px;padding:10px 6px;font-weight:700;color:var(--mut)}
 .seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
@@ -343,6 +348,7 @@ const IC={
  formulas:'<path d="M9 3h6M10 3v6L5 19a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-10V3"/>',
  batida:'<path d="M4 9h16l-2 10H6L4 9Z"/><path d="M8 9V6a4 4 0 0 1 8 0v3M12 13v3"/>',
  hist:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ sair:'<path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/>',
  admin:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/>',
  config:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
  mais:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>'
@@ -358,9 +364,13 @@ const pend=()=>ADM.contas.filter(c=>c.status==='pendente').length;
 const navList=()=>NAV.concat(isSuper()?[['admin','Administração']]:[]);
 function chrome(){
   if(!S)return;
-  $('#side').innerHTML='<div class="brand"><img src="'+ICON192+'" alt="">Confina Certo</div>'+navList().map(([id,t])=>'<a href="#'+id+'" class="'+(view===id?'on':'')+'">'+ico(id)+t+(id==='admin'&&pend()?'<span class="nav-b">'+pend()+'</span>':'')+'</a>').join('');
-  $('#tabs').innerHTML=TABS.map(([id,t])=>{const on=view===id||(id==='mais'&&(MAIS.includes(view)||view==='mais'||view==='admin'));return '<a href="#'+id+'" class="'+(on?'on':'')+'">'+ico(id)+t+'</a>'}).join('');
-  $('#top').innerHTML='<img class="logo" src="'+ICON192+'" alt=""><div><h1>'+esc(TITULOS[view]||'')+'</h1><small>'+esc(S.cfg.fazenda)+'</small></div><div class="sp"></div><div class="net'+(navigator.onLine?'':' off')+'"><i></i>'+netLabel()+'</div>';
+  const adm=isSuper();
+  document.body.classList.toggle('adm',adm);
+  const sair=FB.on?'<a href="#" data-act="logout" class="side-out">'+ico('sair')+'Sair</a>':'';
+  const nav=adm?[['admin','Clientes']]:NAV;
+  $('#side').innerHTML='<div class="brand"><img src="'+ICON192+'" alt="">Confina Certo</div>'+nav.map(([id,t])=>'<a href="#'+id+'" class="'+(view===id?'on':'')+'">'+ico(id==='admin'?'admin':id)+t+(id==='admin'&&pend()?'<span class="nav-b">'+pend()+'</span>':'')+'</a>').join('')+sair;
+  $('#tabs').innerHTML=adm?'':TABS.map(([id,t])=>{const on=view===id||(id==='mais'&&(MAIS.includes(view)||view==='mais'));return '<a href="#'+id+'" class="'+(on?'on':'')+'">'+ico(id)+t+'</a>'}).join('');
+  $('#top').innerHTML='<img class="logo" src="'+ICON192+'" alt=""><div><h1>'+esc(adm?'Administração':(TITULOS[view]||''))+'</h1><small>'+esc(adm?'Aimex · clientes e acessos':S.cfg.fazenda)+'</small></div><div class="sp"></div><div class="net'+(navigator.onLine?'':' off')+'"><i></i><span class="nl">'+netLabel()+'</span></div>'+(FB.on?'<button class="topout" data-act="logout">Sair</button>':'');
 }
 function netLabel(){return !navigator.onLine?'Offline · salvo no aparelho':FB.on?'Online · sincronizado':'Modo local'}
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2800)}
@@ -384,7 +394,6 @@ VIEWS.painel=()=>{
   const forn30=sum(S.forn.filter(h=>h.data>addDias(hoje(),-30)),h=>h.valor);
   const kg30=sum(S.forn.filter(h=>h.data>addDias(hoje(),-30)),h=>h.kg);
   const al=[];
-  if(isSuper()&&pend())al.push(['warn',pend()+' pedido(s) de acesso aguardando liberação.','admin']);
   S.insumos.forEach(i=>{const c=compraCalc(i.id);
     if(c.comprado&&c.estoque<=0)al.push(['bad','Estoque de '+i.nome+' zerado ou negativo ('+fmt(c.estoque)+' kg) — confira compras e batidas.','insumos']);
     else{const u=usoMedio7(i.id);if(u>0&&c.estoque/u<7)al.push(['warn',i.nome+': estoque para ~'+fmt(c.estoque/u,1)+' dias ('+fmt(c.estoque)+' kg).','insumos'])}});
@@ -469,21 +478,28 @@ VIEWS.admin=()=>{
   if(!isSuper())return '<div class="card empty">Acesso restrito ao administrador.</div>';
   const grupos=[['pendente','Aguardando liberação'],['liberado','Liberados'],['bloqueado','Bloqueados']];
   const dt=iso=>iso?fmtData(iso.slice(0,10)):'—';
-  let h=head('Administração',ADM.contas.length+' conta(s) · '+pend()+' aguardando liberação');
-  if(!ADM.contas.length)return h+'<div class="card empty">Nenhum cadastro ainda. Quando alguém criar uma conta, aparece aqui.</div>';
+  const n=st=>ADM.contas.filter(c=>(c.status||'pendente')===st).length;
+  let h='<div class="stats s4"><div class="stat"><div class="l">Clientes</div><div class="v">'+ADM.contas.length+'</div><div class="s">cadastrados</div></div>'
+   +'<div class="stat '+(n('pendente')?'badv':'')+'"><div class="l">Aguardando</div><div class="v">'+n('pendente')+'</div><div class="s">liberação</div></div>'
+   +'<div class="stat good"><div class="l">Liberados</div><div class="v">'+n('liberado')+'</div><div class="s">com acesso</div></div>'
+   +'<div class="stat"><div class="l">Bloqueados</div><div class="v">'+n('bloqueado')+'</div><div class="s">sem acesso</div></div></div>';
+  if(!ADM.contas.length)return h+'<div class="card empty" style="margin-top:12px">Nenhum cadastro ainda. Quando alguém criar uma conta, aparece aqui.</div>';
+  h+='<input id="adm-q" placeholder="Buscar fazenda, nome ou e-mail" style="margin-top:12px">';
   grupos.forEach(([st,tt])=>{
     const L=ADM.contas.filter(c=>(c.status||'pendente')===st).sort((a,b)=>String(b.criadoEm||'').localeCompare(String(a.criadoEm||'')));
     if(!L.length)return;
-    h+='<div class="linha">'+tt+' ('+L.length+')</div><div class="card contas">'+L.map(c=>
-      '<div class="row"><div class="g"><b>'+esc(c.fazenda||'(sem nome)')+'</b><span>'+esc(c.nome||'')+(c.nome?' · ':'')+esc(c.email||'')+(c.whats?' · '+esc(c.whats):'')+'</span><span style="display:block;font-size:12px">Cadastro em '+dt(c.criadoEm)+(c.decididoEm?' · decisão em '+dt(c.decididoEm):'')+'</span>'
+    h+='<div class="linha">'+tt+' ('+L.length+')</div><div class="card contas">'+L.map(c=>{
+      const wa=String(c.whats||'').replace(/\D/g,'');
+      return '<div class="row" data-s="'+esc(((c.fazenda||'')+' '+(c.nome||'')+' '+(c.email||'')).toLowerCase())+'"><div class="g"><b>'+esc(c.fazenda||'(sem nome)')+'</b><span>'+esc(c.nome||'')+(c.nome?' · ':'')+esc(c.email||'')+(c.whats?' · '+esc(c.whats):'')+'</span><span style="display:block;font-size:12px">Cadastro em '+dt(c.criadoEm)+(c.decididoEm?' · decisão em '+dt(c.decididoEm):'')+'</span>'
       +'<div class="acts">'+(st!=='liberado'?'<button class="btn sm" data-act="admSet" data-id="'+esc(c.id)+'" data-st="liberado">Liberar acesso</button>':'')
       +(st!=='bloqueado'?'<button class="btn sm sec" data-act="admSet" data-id="'+esc(c.id)+'" data-st="bloqueado">'+(st==='pendente'?'Recusar':'Bloquear')+'</button>':'')
-      +'<button class="btn sm line" style="color:var(--red)" data-act="admDel" data-id="'+esc(c.id)+'">Remover</button></div></div></div>').join('')+'</div>';
+      +(wa?'<a class="btn sm sec" target="_blank" rel="noopener" href="https://wa.me/'+(wa.length<=11?'55':'')+wa+'">WhatsApp</a>':'')
+      +'<button class="btn sm line" style="color:var(--red)" data-act="admDel" data-id="'+esc(c.id)+'">Remover</button></div></div></div>'}).join('')+'</div>';
   });
   return h+'<p class="note">Liberar dá acesso imediato (o cliente vê a tela mudar sozinho). Cada cliente enxerga só os dados da própria fazenda.</p>';
 };
 
-VIEWS.mais=()=>'<div class="card">'+(isSuper()?[['admin','Administração','Liberar acessos'+(pend()?' · '+pend()+' pendente(s)':'')]]:[]).concat([['animais','Animais','Cadastro individual por brinco'],['hist','Histórico de fornecimento','O que foi dado em cada pasto'],['formulas','Formulações','Receitas, custo e nutrientes'],['compras','Compra de insumos','Entradas de matéria-prima'],['areas','Pastos e baias','Áreas cadastradas'],['config','Ajustes','Listas, conta e instalação']]).map(([id,t,s])=>'<a class="row" href="#'+id+'"><div class="g"><b>'+t+'</b><span>'+s+'</span></div>'+ico(id)+'</a>').join('')+'</div>';
+VIEWS.mais=()=>'<div class="card">'+([]).concat([['animais','Animais','Cadastro individual por brinco'],['hist','Histórico de fornecimento','O que foi dado em cada pasto'],['formulas','Formulações','Receitas, custo e nutrientes'],['compras','Compra de insumos','Entradas de matéria-prima'],['areas','Pastos e baias','Áreas cadastradas'],['config','Ajustes','Listas, conta e instalação']]).map(([id,t,s])=>'<a class="row" href="#'+id+'"><div class="g"><b>'+t+'</b><span>'+s+'</span></div>'+ico(id)+'</a>').join('')+'</div>';
 
 VIEWS.config=()=>{
   const L=S.cfg.listas,ad=isOwner(),ta=(k,t)=>'<label>'+t+' (um por linha)</label><textarea id="ls-'+k+'" rows="6" '+(ad?'':'disabled')+'>'+esc((L[k]||[]).join('\n'))+'</textarea>';
@@ -766,7 +782,7 @@ const ACT={
     render(false);toast('Ajustes salvos');
   },
   install:async()=>{if(deferredInstall){deferredInstall.prompt();await deferredInstall.userChoice;deferredInstall=null;render(false)}},
-  logout:()=>{if(AUTH)AUTH.out()},
+  logout:(d,t,e)=>{if(e)e.preventDefault();if(AUTH)AUTH.out()},
   loginMode:d=>setLoginMode(d.m||(loginMode==='in'?'reg':'in')),
   admSet:async(d)=>{
     if(!isSuper())return;
@@ -805,6 +821,7 @@ document.addEventListener('submit',e=>{
 document.addEventListener('input',e=>{
   const id=e.target.id||'';
   if(id.startsWith('bt-')){btRead();updBatida()}
+  else if(id==='adm-q'){const q=e.target.value.toLowerCase();document.querySelectorAll('.contas .row[data-s]').forEach(r=>r.style.display=r.dataset.s.includes(q)?'':'none')}
   else if(id==='an-q'){const q=e.target.value.toLowerCase();document.querySelectorAll('tr[data-s]').forEach(r=>r.style.display=r.dataset.s.includes(q)?'':'none')}
   else if(['an-n','an-p','an-v'].includes(id)&&$('#an-calc'))$('#an-calc').innerHTML=animalPanel();
   else if(id.startsWith('lt-')&&$('#lt-calc'))$('#lt-calc').innerHTML=lotePanel(readLote());
@@ -828,7 +845,7 @@ window.addEventListener('hashchange',()=>{closeModal();render(true)});
 function render(top){
   if(!S)return;
   const h=(location.hash||'#painel').slice(1);
-  const novo=VIEWS[h]?h:'painel';
+  const novo=isSuper()?'admin':(VIEWS[h]?h:'painel');
   if(novo!==view)top=true;
   view=novo;
   const y=window.scrollY;
@@ -972,7 +989,7 @@ function startAdmin(){
   stopAdmin();
   ADM.unsub=FS.onSnapshot(FS.collection(DB,'contas'),snap=>{
     ADM.contas=[];snap.forEach(d=>ADM.contas.push(Object.assign({id:d.id},d.data())));
-    if(S){chrome();if(view==='admin'||view==='painel'||view==='mais')render(false)}
+    if(S&&isSuper())render(false)
   },e=>toast(msgFS(e)));
 }
 function stopAdmin(){if(ADM.unsub){try{ADM.unsub()}catch(e){}ADM.unsub=null}ADM.contas=[]}
@@ -1006,7 +1023,7 @@ async function boot(){
       return;
     }
     $('#login').classList.add('hidden');
-    if(isSuper()){hideGate();startSync();startAdmin();return}
+    if(isSuper()){hideGate();S=emptyState();S.cfg.fazenda='Administração';FB.ready=true;startAdmin();render(true);return}
     CONTA_UNSUB=FS.onSnapshot(FS.doc(DB,'contas/'+user.uid),snap=>{
       const c=snap.exists()?snap.data():null;CONTA=c;
       if(c&&c.status==='liberado'){
