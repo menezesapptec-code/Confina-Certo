@@ -248,7 +248,6 @@ let CONTA=null,CONTA_UNSUB=null,SIGNUP=false,loginMode='in';
 let S=null;
 const LISTAS0={
   categorias:['Energético','Proteico','Volumoso','Nucleo','Minerais','Aditivo'],
-  catAnimal:['Bezerro (a)','Novilha','Vaca','Garrote','Boi','Misto'],
   racas:['Nelore','Angus','Cruzado','Brahman','Girolando','Tabapuã','Senepol','Outra'],
   tipos:['Baixo Consumo','RIP','TIP - Adaptação','TIP - Crescimento','TIP - Engorda','TIP - Terminação']
 };
@@ -298,15 +297,16 @@ function demoFazenda(nome){
   // lote, área, dias desde entrada, qtd, categoria, peso entrada, %PV, dias, GMD, fórmula, idade mín/máx (meses)
   const L=[['Lote 01 · Adaptação','da1',12,52,'Garrote',350,2.0,100,1.1,'df1',12,16],['Lote 02 · Crescimento','da2',35,48,'Garrote',380,2.1,90,1.3,'df2',14,20],
            ['Lote 03 · Terminação','da3',70,50,'Boi',420,2.2,110,1.5,'df3',22,30],['Lote 04 · Terminação','da4',52,50,'Boi',410,2.2,100,1.45,'df3',20,28]];
-  s.lotes=L.map((x,i)=>({id:'dl'+(i+1),nome:x[0],areaId:x[1],inicio:addDias(h,-x[2]),qtd:x[3],rc:.52,cat:x[4],pesoIn:x[5],cons:x[6],dias:x[7],gmd:x[8]}));
+  s.lotes=L.map((x,i)=>({id:'dl'+(i+1),nome:x[0],areaId:x[1],inicio:addDias(h,-x[2]),qtd:x[3],rc:.52,cat:x[4],pesoIn:x[5],cons:x[6],dias:x[7],gmd:x[8],sis:i<2?'Recria':'Engorda'}));
   let n=0;
   L.forEach((x,i)=>{
     for(let k=0;k<x[3];k++){
       n++;const fem=i===0&&k<6;
       const idade=x[10]+Math.floor(rnd()*(x[11]-x[10]+1)),nasc=addDias(addDias(h,-x[2]),-Math.round(idade*30.4)-Math.floor(rnd()*20));
       const peso=Math.round(x[5]*(fem?.92:1)*(.93+rnd()*.14));
-      s.animais.push({id:'dn'+n,brinco:'JP'+String(n).padStart(4,'0'),sexo:fem?'Fêmea':'Macho',nasc,raca:pick(['Nelore','Angus','Cruzado','Brahman'],[58,16,22,4]),
-        dono:pick([nome,'Terceiro · Agro Silva','Terceiro · Marcos Lima'],[68,20,12]),entrada:addDias(h,-x[2]),pesoIn:peso,valor:r2(peso*(9.8+rnd()*1.4)),loteId:'dl'+(i+1)});
+      const pkg=r2(9.8+rnd()*1.4),sx=fem?'Fêmea':'Macho';
+      s.animais.push({id:'dn'+n,brinco:'JP'+String(n).padStart(4,'0'),sexo:sx,cat:catSugerida(sx,idadeMeses(nasc)),nasc,raca:pick(['Nelore','Angus','Cruzado','Brahman'],[58,16,22,4]),
+        dono:pick([nome,'Terceiro · Agro Silva','Terceiro · Marcos Lima'],[68,20,12]),entrada:addDias(h,-x[2]),pesoIn:peso,valorKg:pkg,valor:r2(peso*pkg),loteId:'dl'+(i+1)});
     }
   });
   const I=[['di1','Milho moído','Energético',60,88,9,88,0,0,.98,'Cooperativa Agrícola'],['di2','Silagem de milho','Volumoso',0,35,8,68,0,0,.24,'Fazenda Vizinha'],['di3','Farelo de soja','Proteico',40,89,46,84,0,0,2.31,'Grãos do Vale'],
@@ -343,7 +343,7 @@ function save(){if(FB.on){flush();return}try{localStorage.setItem(KEY,JSON.strin
 const byId=(arr,id)=>arr.find(x=>x.id===id);
 const area=id=>byId(S.areas,id),insumo=id=>byId(S.insumos,id),formula=id=>byId(S.formulas,id);
 function loteCalc(l){
-  const dias=num(l.dias),gmd=num(l.gmd),pi=num(l.pesoIn),c=num(l.cons)/100,q=num(l.qtd);
+  const dias=num(l.dias),gmd=num(l.gmd),pi=lotePeso(l),c=num(l.cons)/100,q=loteQtd(l);
   const ganho=dias*gmd,pf=pi+ganho,pm=(pf+pi)/2;
   const ci=pi*c,cm=pm*c,cf=pf*c;
   const dec=l.inicio?clamp(diffDias(l.inicio,hoje()),0,dias):0;
@@ -375,6 +375,21 @@ function formCalc(f,st){
 const lotesDaArea=id=>S.lotes.filter(l=>l.areaId===id);
 const fornHoje=areaId=>sum(S.forn.filter(h=>h.areaId===areaId&&h.data===hoje()),h=>h.kg);
 const ultimoForn=areaId=>S.forn.filter(h=>h.areaId===areaId).map(h=>h.data).sort().pop()||'';
+const CATS_ANIMAL=['Bezerro','Bezerra','Novilha','Garrote','Vaca','Boi'];
+const SIS={Recria:{cons:1.8,dias:150,gmd:.8},Engorda:{cons:2.2,dias:100,gmd:1.4}};
+function catSugerida(sexo,m){
+  if(m==null)return '';
+  if(sexo==='Fêmea')return m<12?'Bezerra':m<24?'Novilha':'Vaca';
+  return m<12?'Bezerro':m<24?'Garrote':'Boi';
+}
+const animaisDoLote=id=>S.animais.filter(a=>a.loteId===id);
+function loteQtd(l){const n=animaisDoLote(l.id).length;return n||num(l.qtd)}
+function lotePeso(l){const A=animaisDoLote(l.id);return A.length?sum(A,a=>a.pesoIn)/A.length:num(l.pesoIn)}
+function loteCat(l){
+  const A=animaisDoLote(l.id);if(!A.length)return l.cat||'';
+  const c=[...new Set(A.map(a=>a.cat||catSugerida(a.sexo,idadeMeses(a.nasc))).filter(Boolean))];
+  return c.length===1?c[0]:(c.length?'Misto':'');
+}
 function idadeMeses(n){
   if(!n)return null;const a=new Date(n+'T12:00:00'),b=new Date();
   let m=(b.getFullYear()-a.getFullYear())*12+b.getMonth()-a.getMonth();if(b.getDate()<a.getDate())m--;return Math.max(0,m);
@@ -406,7 +421,7 @@ const NAV=[['painel','Painel'],['lotes','Lotes'],['animais','Animais'],['batida'
 const TABS=[['painel','Painel'],['lotes','Lotes'],['batida','Batida'],['insumos','Insumos'],['mais','Mais']];
 const MAIS=['animais','hist','formulas','compras','areas','config'];
 const TITULOS={admin:'Administração',painel:'Painel',lotes:'Lotes',animais:'Animais',batida:'Batida',hist:'Histórico de fornecimento',formulas:'Formulações',insumos:'Lista de insumos',compras:'Compra de insumos',areas:'Pastos e baias',config:'Ajustes',mais:'Mais'};
-let view='painel',deferredInstall=null,BT=null,FD=null,fHist='';
+let view='painel',deferredInstall=null,BT=null,FD=null,fHist='',fAn='';
 
 const pend=()=>ADM.contas.filter(c=>c.status==='pendente').length;
 const navList=()=>NAV.concat(isSuper()?[['admin','Administração']]:[]);
@@ -436,12 +451,14 @@ const VIEWS={};
 
 VIEWS.painel=()=>{
   const ativos=S.lotes.filter(l=>loteCalc(l).st==='ativo');
-  const cab=sum(S.lotes.filter(l=>loteCalc(l).st!=='encerrado'),l=>l.qtd);
+  const cab=S.animais.length+sum(S.lotes.filter(l=>!animaisDoLote(l.id).length&&loteCalc(l).st!=='encerrado'),l=>l.qtd);
   const prev=sum(ativos,l=>loteCalc(l).consHojeL);
   const estVal=sum(S.insumos,i=>{const c=compraCalc(i.id);return Math.max(0,c.estoque)*c.valorKg});
   const forn30=sum(S.forn.filter(h=>h.data>addDias(hoje(),-30)),h=>h.valor);
   const kg30=sum(S.forn.filter(h=>h.data>addDias(hoje(),-30)),h=>h.kg);
   const al=[];
+  const sl=S.animais.filter(a=>!a.loteId).length;
+  if(sl)al.push(['ok',sl+' animal(is) cadastrado(s) ainda sem lote.','animais']);
   S.insumos.forEach(i=>{const c=compraCalc(i.id);
     if(c.comprado&&c.estoque<=0)al.push(['bad','Estoque de '+i.nome+' zerado ou negativo ('+fmt(c.estoque)+' kg) — confira compras e batidas.','insumos']);
     else{const u=usoMedio7(i.id);if(u>0&&c.estoque/u<7)al.push(['warn',i.nome+': estoque para ~'+fmt(c.estoque/u,1)+' dias ('+fmt(c.estoque)+' kg).','insumos'])}});
@@ -449,7 +466,7 @@ VIEWS.painel=()=>{
   ativos.forEach(l=>{const c=loteCalc(l),d=diffDias(hoje(),c.fim);if(d<=7&&d>=0)al.push(['ok','Lote “'+l.nome+'” termina em '+d+' dia(s) ('+fmtData(c.fim)+').','lotes'])});
   const linhas=ativos.map(l=>{
     const c=loteCalc(l),ar=area(l.areaId),f=fornHoje(l.areaId),p=c.consHojeL,pct=p?f/p*100:0,ult=ultimoForn(l.areaId);
-    return '<tr><td><b>'+esc(l.nome)+'</b><br><span class="mut">'+esc(ar?ar.nome:'—')+' · '+fmt(l.qtd)+' cab</span></td><td>'+fmt(p)+'</td><td>'+fmt(f)+'</td><td>'+(f?'<span class="b '+(pct>=90&&pct<=110?'ok':'warn')+'">'+fmt(pct)+'%</span>':'<span class="b mut">pendente</span>')+'<br><span class="mut" style="font-size:11px">últ. '+fmtData(ult)+'</span></td></tr>';
+    return '<tr><td><b>'+esc(l.nome)+'</b><br><span class="mut">'+esc(ar?ar.nome:'—')+' · '+fmt(loteQtd(l))+' cab</span></td><td>'+fmt(p)+'</td><td>'+fmt(f)+'</td><td>'+(f?'<span class="b '+(pct>=90&&pct<=110?'ok':'warn')+'">'+fmt(pct)+'%</span>':'<span class="b mut">pendente</span>')+'<br><span class="mut" style="font-size:11px">últ. '+fmtData(ult)+'</span></td></tr>';
   }).join('');
   return '<div class="stats s4">'
    +'<div class="stat"><div class="l">Animais</div><div class="v">'+fmt(cab)+'</div><div class="s">'+ativos.length+' lote(s) ativo(s) de '+S.lotes.length+'</div></div>'
@@ -464,30 +481,34 @@ VIEWS.painel=()=>{
 };
 
 VIEWS.lotes=()=>{
-  let h=head('Lotes',S.lotes.length+' cadastrado(s) · consumo projetado em kg de ração por dia','<button class="btn sm" data-act="novoLote">+ Novo lote</button>');
-  if(!S.lotes.length)return h+'<div class="card empty">Nenhum lote ainda.</div>';
+  let h=head('Lotes',S.lotes.length+' cadastrado(s) · quantidade, peso e categoria vêm dos animais','<button class="btn sm" data-act="novoLote">+ Novo lote</button>');
+  if(!S.lotes.length)return h+'<div class="card empty">Nenhum lote ainda. Crie o lote escolhendo o pasto de destino e o sistema (recria ou engorda); depois adicione os animais.</div>';
   const rows=S.lotes.slice().sort((a,b)=>(a.inicio||'')<(b.inicio||'')?1:-1).map(l=>{
     const c=loteCalc(l),ar=area(l.areaId);
-    return '<tr data-act="lote" data-id="'+l.id+'" style="cursor:pointer"><td><b>'+esc(l.nome)+'</b><br><span class="mut">'+esc(ar?ar.nome:'—')+' · '+esc(l.cat||'')+'</span></td><td>'+fmt(l.qtd)+'</td><td>'+fmt(l.pesoIn)+'</td><td>'+fmt(num(l.cons),2)+'%</td><td>'+fmt(c.cmL)+'</td><td>'+fmtData(c.fim)+'<br><span class="b '+(c.st==='ativo'?'ok':c.st==='futuro'?'warn':'mut')+'">'+(c.st==='ativo'?'ativo':c.st==='futuro'?'a iniciar':'encerrado')+'</span></td></tr>';
+    return '<tr data-act="lote" data-id="'+l.id+'" style="cursor:pointer"><td><b>'+esc(l.nome)+'</b><br><span class="mut">'+esc(ar?ar.nome:'—')+' · '+esc(l.sis||'—')+'</span></td><td>'+fmt(loteQtd(l))+'</td><td>'+(loteQtd(l)?fmt(lotePeso(l)):'—')+'</td><td>'+esc(loteCat(l)||'—')+'</td><td>'+fmt(c.cmL)+'</td></tr>';
   }).join('');
-  return h+'<div class="card"><div class="scroll"><table><tr><th>Lote</th><th>Cab</th><th>Peso ent.</th><th>Cons. %PV</th><th>Médio kg/dia</th><th>Fim</th></tr>'+rows+'</table></div></div>'
-   +'<p class="note">Toque num lote para ver a projeção completa (inicial, médio e final por cabeça e por lote).</p>';
+  return h+'<div class="card"><div class="scroll"><table><tr><th>Lote</th><th>Cab</th><th>Peso ent.</th><th>Categoria</th><th>Médio kg/dia</th></tr>'+rows+'</table></div></div>'
+   +'<p class="note">Toque num lote para ver a projeção, adicionar ou tirar animais.</p>';
 };
 
 VIEWS.animais=()=>{
-  const h=head('Animais',S.animais.length+' cadastrado(s)','<button class="btn sm" data-act="novoAnimal">+ Novo animal</button>');
-  if(!S.animais.length)return h+'<div class="card empty">Nenhum animal cadastrado. Toque em “+ Novo animal”.</div>';
-  const rows=S.animais.slice().sort((a,b)=>String(a.brinco).localeCompare(String(b.brinco),'pt-BR',{numeric:true})).map(a=>{
-    const m=idadeMeses(a.nasc),l=byId(S.lotes,a.loteId);
-    return '<tr data-act="animal" data-id="'+a.id+'" data-s="'+esc((a.brinco+' '+a.raca+' '+a.dono+' '+(l?l.nome:'')).toLowerCase())+'" style="cursor:pointer"><td><b>'+esc(a.brinco)+'</b><br><span class="mut">'+esc(a.sexo||'')+' · '+esc(a.raca||'')+(l?' · '+esc(l.nome):'')+'</span></td><td>'+(m==null?'—':m+' m')+'</td><td>'+fmt(a.pesoIn)+'</td><td>'+brl(a.valor)+'<br><span class="mut" style="font-size:11px">'+esc(a.dono||'')+'</span></td></tr>'}).join('');
-  return h+'<div class="card"><input id="an-q" placeholder="Buscar brinco, raça, proprietário ou lote" style="margin-bottom:10px"><div class="scroll"><table><tr><th>Brinco</th><th>Idade</th><th>Peso ent.</th><th>Valor pago</th></tr>'+rows+'</table></div></div>';
+  const btns='<div style="display:flex;gap:8px"><button class="btn sm sec" data-act="novosAnimais">+ Vários</button><button class="btn sm" data-act="novoAnimal">+ Novo animal</button></div>';
+  const h=head('Animais',S.animais.length+' cadastrado(s)',btns);
+  if(!S.animais.length)return h+'<div class="card empty">Nenhum animal cadastrado. Toque em “+ Novo animal” ou “+ Vários” (sequência de brincos).</div>';
+  const semLote=S.animais.filter(a=>!a.loteId).length;
+  const chips='<div class="chips"><button class="chip '+(!fAn?'on':'')+'" data-act="fan" data-f="">Todos</button><button class="chip '+(fAn==='none'?'on':'')+'" data-act="fan" data-f="none">Sem lote ('+semLote+')</button>'+S.lotes.map(l=>'<button class="chip '+(fAn===l.id?'on':'')+'" data-act="fan" data-f="'+l.id+'">'+esc(l.nome)+' ('+animaisDoLote(l.id).length+')</button>').join('')+'</div>';
+  const lista=S.animais.filter(a=>!fAn||(fAn==='none'?!a.loteId:a.loteId===fAn));
+  const rows=lista.slice().sort((a,b)=>String(a.brinco).localeCompare(String(b.brinco),'pt-BR',{numeric:true})).map(a=>{
+    const m=idadeMeses(a.nasc),l=byId(S.lotes,a.loteId),cat=a.cat||catSugerida(a.sexo,m);
+    return '<tr data-act="animal" data-id="'+a.id+'" data-s="'+esc((a.brinco+' '+a.raca+' '+a.dono+' '+cat+' '+(l?l.nome:'')).toLowerCase())+'" style="cursor:pointer"><td><b>'+esc(a.brinco)+'</b><br><span class="mut">'+esc(cat)+' · '+esc(a.raca||'')+(l?' · '+esc(l.nome):'')+'</span></td><td>'+(m==null?'—':m+' m')+'</td><td>'+fmt(a.pesoIn)+'</td><td>'+brl(a.valor)+'<br><span class="mut" style="font-size:11px">'+esc(a.dono||'')+'</span></td></tr>'}).join('');
+  return h+chips+'<div class="card"><input id="an-q" placeholder="Buscar brinco, categoria, raça, proprietário" style="margin-bottom:10px"><div class="scroll"><table><tr><th>Brinco</th><th>Idade</th><th>Peso compra</th><th>Valor pago</th></tr>'+rows+'</table></div>'+(lista.length?'':'<div class="empty">Nenhum animal neste filtro.</div>')+'</div>';
 };
 
 VIEWS.areas=()=>{
   const h=head('Pastos e baias',S.areas.length+' área(s) · '+fmt(sum(S.areas,a=>a.m2)/10000,1)+' ha no total','<button class="btn sm" data-act="novaArea">+ Nova área</button>');
   if(!S.areas.length)return h+'<div class="card empty">Cadastre pastos ou baias.</div>';
   return h+'<div class="card">'+S.areas.map(a=>{const ls=lotesDaArea(a.id);
-    return '<div class="row" data-act="area" data-id="'+a.id+'"><div class="g"><b>'+esc(a.nome)+'</b><span>'+(ls.length?ls.map(l=>esc(l.nome)+' ('+l.qtd+')').join(', '):'livre')+'</span></div><div class="r"><b>'+fmt(num(a.m2)/10000,2)+' ha</b><span class="mut" style="font-size:12px">'+fmt(a.m2)+' m²</span></div></div>'}).join('')+'</div>';
+    return '<div class="row" data-act="area" data-id="'+a.id+'"><div class="g"><b>'+esc(a.nome)+'</b><span>'+(ls.length?ls.map(l=>esc(l.nome)+' ('+loteQtd(l)+')').join(', '):'livre')+'</span></div><div class="r"><b>'+fmt(num(a.m2)/10000,2)+' ha</b><span class="mut" style="font-size:12px">'+fmt(a.m2)+' m²</span></div></div>'}).join('')+'</div>';
 };
 
 VIEWS.insumos=()=>{
@@ -554,7 +575,7 @@ VIEWS.config=()=>{
   const L=S.cfg.listas,ad=isOwner(),ta=(k,t)=>'<label>'+t+' (um por linha)</label><textarea id="ls-'+k+'" rows="6" '+(ad?'':'disabled')+'>'+esc((L[k]||[]).join('\n'))+'</textarea>';
   return head('Ajustes',FB.on&&FB.user?esc(FB.user.email)+(isSuper()?' · administrador':''):'Modo local')
    +'<div class="card"><h3>Fazenda</h3>'+fld('cf-nome','Nome da fazenda',S.cfg.fazenda,{txt:1})+'<button class="btn block" style="margin-top:12px" data-act="saveCfg">Salvar</button>'+'</div>'
-   +'<div class="card"><h3>Listas de opções</h3>'+ta('categorias','Categorias de insumo')+ta('catAnimal','Categorias animais')+ta('racas','Raças')+ta('tipos','Tipos de fórmula')+'</div>'
+   +'<div class="card"><h3>Listas de opções</h3>'+ta('categorias','Categorias de insumo')+ta('racas','Raças')+ta('tipos','Tipos de fórmula')+'</div>'
    +((!S.animais.length&&!S.lotes.length)?'<div class="card"><h3>Dados de demonstração</h3><p class="note" style="margin:6px 0 12px">Carrega 200 animais de exemplo, 4 lotes, fórmulas, compras e 10 dias de histórico para você conhecer o sistema. Só aparece enquanto a fazenda está vazia.</p><button class="btn block" data-act="demoSelf">Carregar 200 animais de demonstração</button></div>':'')
    +(deferredInstall?'<div class="card"><button class="btn block" data-act="install">Instalar no aparelho</button></div>':'')
    +(FB.on?'<div class="card"><button class="btn line block" data-act="logout">Sair da conta</button></div>':'')
@@ -622,37 +643,76 @@ function updBatida(){
 
 /* ===== modais ===== */
 function lotePanel(l){
-  const c=loteCalc(l);
-  return '<div class="kv">'+kv('Ganho',fmt(c.ganho,1)+' kg')+kv('Peso final',fmt(c.pf,1)+' kg')+kv('Peso médio',fmt(c.pm,1)+' kg')+'</div>'
+  const c=loteCalc(l),q=loteQtd(l);
+  return '<div class="kv">'+kv('Animais',fmt(q)+' cab')+kv('Peso médio ent.',q?fmt(lotePeso(l),1)+' kg':'—')+kv('Categoria',esc(loteCat(l)||'—'))+'</div>'
+   +'<div class="kv">'+kv('Ganho',fmt(c.ganho,1)+' kg')+kv('Peso final',fmt(c.pf,1)+' kg')+kv('Peso médio',fmt(c.pm,1)+' kg')+'</div>'
    +'<div class="scroll"><table><tr><th>Consumo</th><th>kg/cab·dia</th><th>kg/lote·dia</th></tr><tr><td>Inicial</td><td>'+fmt(c.ci,2)+'</td><td>'+fmt(c.ciL,1)+'</td></tr><tr><td>Médio</td><td>'+fmt(c.cm,2)+'</td><td>'+fmt(c.cmL,1)+'</td></tr><tr><td>Final</td><td>'+fmt(c.cf,2)+'</td><td>'+fmt(c.cfL,1)+'</td></tr><tr><td><b>Período</b></td><td>'+fmt(c.perCab,1)+'</td><td>'+fmt(c.perLote)+'</td></tr></table></div>'
    +'<p class="note">Data final: <b>'+fmtData(c.fim)+'</b> · hoje: peso estimado '+fmt(c.pesoHoje)+' kg, previsto '+fmt(c.consHojeL)+' kg de ração no lote.</p>';
 }
-function readLote(){return {nome:$('#lt-n').value.trim(),areaId:$('#lt-a').value,inicio:$('#lt-i').value,qtd:num($('#lt-q').value),rc:num($('#lt-rc').value),cat:$('#lt-c').value,pesoIn:num($('#lt-p').value),cons:num($('#lt-cs').value),dias:num($('#lt-di').value),gmd:num($('#lt-g').value)}}
-function mLote(id){
-  const l=id?byId(S.lotes,id):{nome:'',areaId:'',inicio:hoje(),qtd:'',rc:.5,cat:'',pesoIn:'',cons:2,dias:60,gmd:1};
-  sheet('<h2>'+(id?'Lote':'Novo lote')+'</h2><form data-form="lote" data-id="'+(id||'')+'">'
-   +fld('lt-n','Lote',l.nome,{txt:1})+'<div class="cfgrow">'+selF('lt-a','Pasto / baia',S.areas.map(a=>[a.id,a.nome]),l.areaId,'Selecione…')+fld('lt-i','Data início',l.inicio,{type:'date'})+'</div>'
-   +'<div class="cfgrow">'+fld('lt-q','Quantidade (cab)',l.qtd)+fld('lt-rc','RC inicial',l.rc)+'</div>'
-   +'<div class="cfgrow">'+selF('lt-c','Categoria',S.cfg.listas.catAnimal,l.cat,'Selecione…')+fld('lt-p','Peso médio entrada (kg)',l.pesoIn)+'</div>'
-   +'<div class="cfgrow">'+fld('lt-cs','Consumo de ração (% PV)',l.cons)+fld('lt-di','Dias',l.dias)+'</div>'+fld('lt-g','GMD (kg/dia)',l.gmd)
-   +'<div id="lt-calc">'+lotePanel(l)+'</div><button class="btn block" style="margin-top:6px">Salvar</button></form>'+(id?delBtn('lotes',id):''));
+function readLote(){
+  const id=$('[data-form=lote]')?$('[data-form=lote]').dataset.id:'';
+  return {id:id||'__novo',nome:$('#lt-n').value.trim(),areaId:$('#lt-a').value,sis:$('#lt-s').value,inicio:$('#lt-i').value,cons:num($('#lt-cs').value),dias:num($('#lt-di').value),gmd:num($('#lt-g').value)};
 }
+function mLote(id){
+  const l=id?byId(S.lotes,id):{nome:'',areaId:'',sis:'Recria',inicio:hoje(),cons:SIS.Recria.cons,dias:SIS.Recria.dias,gmd:SIS.Recria.gmd};
+  sheet('<h2>'+(id?'Lote':'Novo lote')+'</h2><form data-form="lote" data-id="'+(id||'')+'">'
+   +fld('lt-n','Nome do lote',l.nome,{txt:1})
+   +'<div class="cfgrow">'+selF('lt-a','Pasto destino',S.areas.map(a=>[a.id,a.nome]),l.areaId,'Selecione…')+selF('lt-s','Sistema',['Recria','Engorda'],l.sis||'Recria')+'</div>'
+   +'<div class="cfgrow">'+fld('lt-i','Data início',l.inicio,{type:'date'})+fld('lt-cs','Consumo (% PV)',l.cons)+'</div>'
+   +'<div class="cfgrow">'+fld('lt-di','Dias',l.dias)+fld('lt-g','GMD (kg/dia)',l.gmd)+'</div>'
+   +(id?'<button type="button" class="btn sec block" data-act="alocar" data-id="'+id+'" style="margin:6px 0">Animais do lote ('+animaisDoLote(id).length+')</button>':'<p class="note">Depois de salvar, você escolhe os animais deste lote. Quantidade, peso médio de entrada e categoria vêm dos animais.</p>')
+   +(id?'<div id="lt-calc">'+lotePanel(l)+'</div>':'<div id="lt-calc"></div>')+'<button class="btn block" style="margin-top:6px">Salvar</button></form>'+(id?delBtn('lotes',id):''));
+}
+/* ===== animais do lote ===== */
+let AL={id:'',sel:new Set()};
+function mAlocar(id){
+  const l=byId(S.lotes,id);if(!l)return;
+  AL={id,sel:new Set(animaisDoLote(id).map(a=>a.id))};
+  const pool=S.animais.filter(a=>!a.loteId||a.loteId===id).sort((a,b)=>String(a.brinco).localeCompare(String(b.brinco),'pt-BR',{numeric:true}));
+  const rows=pool.map(a=>{const cat=a.cat||catSugerida(a.sexo,idadeMeses(a.nasc));
+    return '<label class="alrow" data-s="'+esc((a.brinco+' '+cat+' '+a.raca+' '+a.dono).toLowerCase())+'" style="display:flex;gap:10px;align-items:center;padding:9px 4px;border-bottom:1px solid #e6dfcf"><input type="checkbox" class="al-cb" data-id="'+a.id+'"'+(a.loteId===id?' checked':'')+' style="width:20px;height:20px"><span><b>'+esc(a.brinco)+'</b> <span class="mut">'+esc(cat)+' · '+fmt(a.pesoIn)+' kg · '+esc(a.raca||'')+'</span></span></label>'}).join('');
+  sheet('<h2>Animais · '+esc(l.nome)+'</h2>'
+   +(pool.length?'<input id="al-q" placeholder="Buscar brinco, categoria, raça" style="margin-bottom:8px"><div style="display:flex;gap:8px;margin-bottom:6px"><button type="button" class="btn sm sec" data-act="alAll" data-v="1">Marcar todos</button><button type="button" class="btn sm sec" data-act="alAll" data-v="0">Limpar</button></div>'
+     +'<p class="note" id="al-n"></p><div style="max-height:46vh;overflow:auto">'+rows+'</div><button type="button" class="btn block" style="margin-top:10px" data-act="alSave">Salvar animais do lote</button>'
+    :'<div class="empty">Não há animais sem lote. Cadastre animais na aba Animais.</div>'));
+  alCount();
+}
+function alCount(){const n=document.querySelectorAll('.al-cb:checked').length;if($('#al-n'))$('#al-n').textContent=n+' selecionado(s)'}
+/* ===== animal ===== */
 function animalPanel(){
-  const m=idadeMeses($('#an-n').value),d=$('#an-n').value?diffDias($('#an-n').value,hoje()):null,p=num($('#an-p').value),v=num($('#an-v').value);
-  return '<div class="kv">'+kv('Idade',m==null?'—':m+' meses')+kv('Dias de vida',d==null?'—':fmt(d))+kv('R$/kg entrada',p>0&&v>0?brl(v/p):'—')+'</div>';
+  const m=idadeMeses($('#an-n').value),d=$('#an-n').value?diffDias($('#an-n').value,hoje()):null,p=num($('#an-p').value),k=num($('#an-k').value);
+  return '<div class="kv">'+kv('Idade',m==null?'—':m+' meses')+kv('Dias de vida',d==null?'—':fmt(d))+kv('Valor pago',p>0&&k>0?brl(p*k):'—')+'</div>';
+}
+function catAutoSet(){
+  const c=$('#an-c');if(!c||c.dataset.man==='1')return;
+  const sug=catSugerida($('#an-s').value,idadeMeses($('#an-n').value));if(sug)c.value=sug;
 }
 function mAnimal(id){
-  const a=id?byId(S.animais,id):{brinco:'',sexo:'Macho',nasc:'',raca:'',dono:'',entrada:hoje(),pesoIn:'',valor:'',loteId:''};
+  const a=id?byId(S.animais,id):{brinco:'',sexo:'Macho',cat:'',nasc:'',raca:'',dono:'',entrada:hoje(),pesoIn:'',valorKg:'',valor:'',loteId:''};
+  const kg=a.valorKg||(num(a.pesoIn)>0&&a.valor?r2(num(a.valor)/num(a.pesoIn)):'');
   const donos=[...new Set(S.animais.map(x=>x.dono).filter(Boolean))];
   sheet('<h2>'+(id?'Animal '+esc(a.brinco):'Novo animal')+'</h2><form data-form="animal" data-id="'+(id||'')+'">'
    +'<div class="cfgrow">'+fld('an-b','Brinco',a.brinco,{txt:1})+selF('an-s','Sexo',['Macho','Fêmea'],a.sexo)+'</div>'
-   +'<div class="cfgrow">'+fld('an-n','Data de nascimento',a.nasc,{type:'date'})+selF('an-r','Raça',S.cfg.listas.racas,a.raca,'Selecione…')+'</div>'
-   +'<div id="an-calc">'+''+'</div>'
+   +'<div class="cfgrow">'+fld('an-n','Data de nascimento',a.nasc,{type:'date'})+selF('an-c','Categoria',CATS_ANIMAL,a.cat||catSugerida(a.sexo,idadeMeses(a.nasc)),'Selecione…')+'</div>'
+   +'<div class="cfgrow">'+selF('an-r','Raça',S.cfg.listas.racas,a.raca,'Selecione…')+fld('an-e','Data de entrada',a.entrada,{type:'date'})+'</div>'
+   +'<div id="an-calc"></div>'
    +'<label for="an-d">Proprietário</label><input id="an-d" list="an-dl" value="'+esc(a.dono)+'"><datalist id="an-dl">'+donos.map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist>'
-   +'<div class="cfgrow">'+fld('an-e','Data de entrada',a.entrada,{type:'date'})+fld('an-p','Peso de entrada (kg)',a.pesoIn)+'</div>'
-   +'<div class="cfgrow">'+fld('an-v','Valor pago (R$)',a.valor)+selF('an-l','Lote (opcional)',S.lotes.map(l=>[l.id,l.nome]),a.loteId,'Sem lote')+'</div>'
+   +'<div class="cfgrow">'+fld('an-k','Valor por kg pago (R$)',kg)+fld('an-p','Peso de compra (kg)',a.pesoIn)+'</div>'
+   +selF('an-l','Lote (opcional)',S.lotes.map(l=>[l.id,l.nome]),a.loteId,'Sem lote')
    +'<button class="btn block" style="margin-top:12px">Salvar</button></form>'+(id?delBtn('animais',id):''));
+  if(a.cat&&a.cat!==catSugerida(a.sexo,idadeMeses(a.nasc)))$('#an-c').dataset.man='1';
   $('#an-calc').innerHTML=animalPanel();
+}
+function mVarios(){
+  const donos=[...new Set(S.animais.map(x=>x.dono).filter(Boolean))];
+  sheet('<h2>Cadastrar vários animais</h2><form data-form="varios">'
+   +'<div class="cfgrow">'+fld('bk-p','Prefixo do brinco',"",{txt:1})+fld('bk-i','Número inicial',1)+'</div>'
+   +'<div class="cfgrow">'+fld('bk-q','Quantidade',"")+selF('bk-s','Sexo',['Macho','Fêmea'],'Macho')+'</div>'
+   +'<div class="cfgrow">'+selF('bk-c','Categoria',CATS_ANIMAL,'','Selecione…')+selF('bk-r','Raça',S.cfg.listas.racas,'','Selecione…')+'</div>'
+   +'<label for="bk-d">Proprietário</label><input id="bk-d" list="bk-dl"><datalist id="bk-dl">'+donos.map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist>'
+   +'<div class="cfgrow">'+fld('bk-e','Data de entrada',hoje(),{type:'date'})+selF('bk-l','Lote (opcional)',S.lotes.map(l=>[l.id,l.nome]),'','Sem lote')+'</div>'
+   +'<div class="cfgrow">'+fld('bk-k','Valor por kg pago (R$)',"")+fld('bk-w','Peso de compra (kg)',"")+'</div>'
+   +'<p class="note" id="bk-t"></p><button class="btn block" style="margin-top:8px">Cadastrar</button></form>');
 }
 function mArea(id){
   const a=id?area(id):{nome:'',m2:''};
@@ -712,23 +772,34 @@ function mForn(id){
 /* ===== formulários ===== */
 const FORMS={};
 FORMS.lote=()=>{
-  const id=$('[data-form=lote]').dataset.id,o=readLote();
+  const id=$('[data-form=lote]').dataset.id,o=readLote();delete o.id;
   if(!o.nome)return toast('Informe o nome do lote');
-  if(!o.areaId)return toast('Escolha o pasto ou baia');
-  if(!(o.qtd>0))return toast('Informe a quantidade de animais');
-  if(!(o.pesoIn>0))return toast('Informe o peso médio de entrada');
+  if(!o.areaId)return toast('Escolha o pasto destino');
   if(!(o.dias>0))return toast('Informe os dias');
-  if(id)Object.assign(byId(S.lotes,id),o);else S.lotes.push(Object.assign({id:uid()},o));
-  save();closeModal();render(false);toast('Lote salvo');
+  let nid=id;
+  if(id)Object.assign(byId(S.lotes,id),o);else{nid=uid();S.lotes.push(Object.assign({id:nid},o))}
+  save();closeModal();render(false);
+  if(!id&&S.animais.some(a=>!a.loteId))mAlocar(nid);else toast('Lote salvo');
 };
 FORMS.animal=()=>{
   const id=$('[data-form=animal]').dataset.id,brinco=$('#an-b').value.trim();
   if(!brinco)return toast('Informe o brinco');
   if(S.animais.some(a=>a.brinco.toLowerCase()===brinco.toLowerCase()&&a.id!==id))return toast('Já existe um animal com esse brinco');
-  const o={brinco,sexo:$('#an-s').value,nasc:$('#an-n').value,raca:$('#an-r').value,dono:$('#an-d').value.trim(),entrada:$('#an-e').value,pesoIn:num($('#an-p').value),valor:num($('#an-v').value),loteId:$('#an-l').value};
+  const pesoIn=num($('#an-p').value),valorKg=num($('#an-k').value);
+  const o={brinco,sexo:$('#an-s').value,cat:$('#an-c').value,nasc:$('#an-n').value,raca:$('#an-r').value,dono:$('#an-d').value.trim(),entrada:$('#an-e').value,pesoIn,valorKg,valor:r2(pesoIn*valorKg),loteId:$('#an-l').value};
   if(o.nasc&&o.nasc>hoje())return toast('Nascimento não pode ser no futuro');
   if(id)Object.assign(byId(S.animais,id),o);else S.animais.push(Object.assign({id:uid()},o));
   save();closeModal();render(false);toast('Animal salvo');
+};
+FORMS.varios=()=>{
+  const p=$('#bk-p').value.trim(),i0=Math.round(num($('#bk-i').value)),q=Math.round(num($('#bk-q').value));
+  if(!(q>0)||q>500)return toast('Informe a quantidade (1 a 500)');
+  const pesoIn=num($('#bk-w').value),valorKg=num($('#bk-k').value);
+  const w=String(i0+q-1).length,ex=new Set(S.animais.map(a=>String(a.brinco).toLowerCase()));
+  const novos=[];
+  for(let n=0;n<q;n++){const b=p+String(i0+n).padStart(w,'0');if(ex.has(b.toLowerCase()))return toast('Brinco '+b+' já existe');
+    novos.push({id:uid(),brinco:b,sexo:$('#bk-s').value,cat:$('#bk-c').value,nasc:'',raca:$('#bk-r').value,dono:$('#bk-d').value.trim(),entrada:$('#bk-e').value,pesoIn,valorKg,valor:r2(pesoIn*valorKg),loteId:$('#bk-l').value})}
+  S.animais.push(...novos);save();closeModal();render(false);toast(q+' animais cadastrados');
 };
 FORMS.area=()=>{
   const id=$('[data-form=area]').dataset.id,nome=$('#ar-n').value.trim(),m2=num($('#ar-m').value);
@@ -796,7 +867,12 @@ const ACT={
   close:()=>closeModal(),
   go:d=>{location.hash='#'+d.v},
   novoLote:()=>mLote(),lote:d=>mLote(d.id),
-  novoAnimal:()=>mAnimal(),animal:d=>mAnimal(d.id),
+  novoAnimal:()=>mAnimal(),animal:d=>mAnimal(d.id),novosAnimais:()=>mVarios(),
+  fan:d=>{fAn=d.f||'';render(false)},alocar:d=>mAlocar(d.id),
+  alAll:d=>{document.querySelectorAll('.al-cb').forEach(c=>{if(c.closest('.alrow').style.display!=='none')c.checked=d.v==='1'});alCount()},
+  alSave:()=>{const on=new Set([...document.querySelectorAll('.al-cb:checked')].map(c=>c.dataset.id));
+    document.querySelectorAll('.al-cb').forEach(c=>{const an=byId(S.animais,c.dataset.id);if(an)an.loteId=on.has(an.id)?AL.id:''});
+    save();closeModal();render(false);toast(on.size+' animal(is) no lote')},
   novaArea:()=>mArea(),area:d=>mArea(d.id),
   novoInsumo:()=>mInsumo(),insumo:d=>mInsumo(d.id),
   novaCompra:()=>mCompra(),compra:d=>mCompra(d.id),
@@ -826,7 +902,7 @@ const ACT={
   },
   saveCfg:()=>{
     const n=$('#cf-nome').value.trim();if(n)S.cfg.fazenda=n;
-    ['categorias','catAnimal','racas','tipos'].forEach(k=>{const v=$('#ls-'+k).value.split('\n').map(x=>x.trim()).filter(Boolean);if(v.length)S.cfg.listas[k]=v});
+    ['categorias','racas','tipos'].forEach(k=>{const v=$('#ls-'+k).value.split('\n').map(x=>x.trim()).filter(Boolean);if(v.length)S.cfg.listas[k]=v});
     save();
     if(FB.on&&FB.user&&!isSuper()&&n){FS.setDoc(FS.doc(DB,'contas/'+FB.user.uid),{fazenda:n},{merge:true}).catch(()=>{})}
     render(false);toast('Ajustes salvos');
@@ -891,8 +967,9 @@ document.addEventListener('input',e=>{
   if(id.startsWith('bt-')){btRead();updBatida()}
   else if(id==='adm-q'){const q=e.target.value.toLowerCase();document.querySelectorAll('.contas .row[data-s]').forEach(r=>r.style.display=r.dataset.s.includes(q)?'':'none')}
   else if(id==='an-q'){const q=e.target.value.toLowerCase();document.querySelectorAll('tr[data-s]').forEach(r=>r.style.display=r.dataset.s.includes(q)?'':'none')}
-  else if(['an-n','an-p','an-v'].includes(id)&&$('#an-calc'))$('#an-calc').innerHTML=animalPanel();
-  else if(id.startsWith('lt-')&&$('#lt-calc'))$('#lt-calc').innerHTML=lotePanel(readLote());
+  else if(id==='al-q'){const q=e.target.value.toLowerCase();document.querySelectorAll('.alrow').forEach(r=>r.style.display=r.dataset.s.includes(q)?'':'none')}
+  else if(['an-n','an-p','an-k'].includes(id)&&$('#an-calc')){if(id==='an-n')catAutoSet();$('#an-calc').innerHTML=animalPanel()}
+  else if(id.startsWith('lt-')&&id!=='lt-s'&&$('#lt-calc')&&$('[data-form=lote]').dataset.id)$('#lt-calc').innerHTML=lotePanel(readLote());
   else if(id.startsWith('fp-'))updFormula();
   else if(id==='ar-m')$('#ar-ha').textContent=fmt(num(e.target.value)/10000,2)+' hectares';
   else if(id==='cp-q'||id==='cp-p')$('#cp-t').textContent=brl(num($('#cp-q').value)*num($('#cp-p').value));
@@ -901,6 +978,11 @@ document.addEventListener('change',e=>{
   const id=e.target.id||'';
   if(id==='bt-f'){BT.formulaId=e.target.value;BT.real={};btRead2();render(false)}
   else if(id.startsWith('bt-')){btRead();updBatida()}
+  else if(id==='an-s'){catAutoSet();$('#an-calc').innerHTML=animalPanel()}
+  else if(id==='an-c')e.target.dataset.man='1';
+  else if(id.startsWith('al-cb')||e.target.classList.contains('al-cb'))alCount();
+  else if(id==='lt-s'){const d=SIS[e.target.value];if(d){$('#lt-cs').value=d.cons;$('#lt-di').value=d.dias;$('#lt-g').value=d.gmd}
+    const f=$('[data-form=lote]');if(f.dataset.id)$('#lt-calc').innerHTML=lotePanel(readLote())}
   else if(id.startsWith('fi-')||id==='fm-t'||id==='fm-a')updFormula();
 });
 function btRead2(){BT.qtd=$('#bt-q')?$('#bt-q').value:BT.qtd;BT.data=$('#bt-d')?$('#bt-d').value:BT.data}
