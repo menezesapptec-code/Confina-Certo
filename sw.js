@@ -1,5 +1,5 @@
 // Service worker: rede primeiro, cache como reserva (funciona sem internet e atualiza sozinho ao subir arquivos novos)
-const V = 'confina-v8';
+const V = 'confina-v9';
 const SHELL = ['./', 'index.html'];
 
 self.addEventListener('install', e => {
