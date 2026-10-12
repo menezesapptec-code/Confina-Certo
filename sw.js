@@ -1,5 +1,5 @@
 // Service worker: rede primeiro, cache como reserva (funciona sem internet e atualiza sozinho ao subir arquivos novos)
-const V = 'confina-v2';
+const V = 'confina-v5';
 const SHELL = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
