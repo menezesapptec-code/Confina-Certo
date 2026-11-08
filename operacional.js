@@ -124,7 +124,7 @@
   const legenda = items => '<div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:12px;color:var(--mut)">' + items.map(i => '<span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:' + i.c + ';margin-right:4px"></i>' + esc(i.n) + '</span>').join('') + '</div>';
 
   /* ---------- barra dos 3 setores ---------- */
-  const SET = [['geral', 'Painel geral'], ['painel', 'TIP Confinamento'], ['op', 'Custo operacional']];
+  const SET = [['geral', 'Painel geral'], ['painel', 'TIP', 'Terminação intensiva a pasto'], ['op', 'Custo operacional']];
   const setorDe = v => v === 'geral' ? 'geral' : v === 'op' ? 'op' : 'painel';
   function bar(view) {
     const vw = document.getElementById('view'); if (!vw) return;
@@ -132,7 +132,7 @@
     const on = setorDe(view), el = document.createElement('div'); el.id = 'setor';
     vw.insertBefore(el, vw.firstChild);
     el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:5px">' +
-      SET.map(([id, t]) => '<a href="#' + id + '" style="text-align:center;padding:10px 4px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;line-height:1.15;' + (on === id ? 'background:var(--green);color:#f4efe6' : 'color:var(--ink)') + '">' + t + '</a>').join('') + '</div>';
+      SET.map(([id, t, sub]) => '<a href="#' + id + '" style="text-align:center;padding:10px 4px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;line-height:1.15;' + (on === id ? 'background:var(--green);color:#f4efe6' : 'color:var(--ink)') + '">' + t + (sub ? '<div style="font-size:10px;font-weight:500;opacity:.8;margin-top:2px">' + sub + '</div>' : '') + '</a>').join('') + '</div>';
   }
 
   /* ---------- estado de tela ---------- */
@@ -161,7 +161,7 @@
   function opResumo(C, m) {
     const tot = C.tot.get(m) || 0, rate = C.rate.get(m), cab = cabMes(C, m), opDia = T.opDia();
     let h = mSel(C);
-    if (!temDados()) h += '<div class="card" style="margin-bottom:12px"><b>Ainda sem lançamentos</b><p class="note" style="margin:6px 0 0">Enquanto não houver lançamentos, o confinamento usa o valor fixo de ' + brl(opDia) + ' por cabeça/dia (tela Custos do lote). Lance os custos e o sistema passa a calcular o valor real de cada mês.</p></div>';
+    if (!temDados()) h += '<div class="card" style="margin-bottom:12px"><b>Ainda sem lançamentos</b><p class="note" style="margin:6px 0 0">Enquanto não houver lançamentos, o TIP usa o valor fixo de ' + brl(opDia) + ' por cabeça/dia (tela Custos do lote). Lance os custos e o sistema passa a calcular o valor real de cada mês.</p></div>';
     h += '<div class="stats"><div class="card stat"><div class="l">Custo do mês</div><div class="v">' + brl(tot) + '</div></div>' +
       '<div class="card stat"><div class="l">Por cabeça · dia</div><div class="v">' + (rate != null ? brl(rate) : brl(opDia)) + '</div><div class="s">' + (rate != null ? 'calculado' : 'sem lançamento: valor fixo') + '</div></div>' +
       '<div class="card stat"><div class="l">Cabeças (média)</div><div class="v">' + fmt(cab, 0) + '</div><div class="s">todos os animais da fazenda</div></div>' +
@@ -185,7 +185,7 @@
       const rr = ms.map(x => ({ l: mLb(x), v: C.rate.has(x) ? C.rate.get(x) : 0 })).filter(r => r.v > 0);
       if (rr.length > 1) h += '<div class="card" style="margin-top:12px"><h3>Custo por cabeça · dia</h3>' + hbars(rr, v => brl(v)) + '</div>';
     }
-    h += '<p class="note">O custo operacional de cada animal no confinamento usa o valor por cabeça·dia do mês. Meses sem nenhum lançamento usam o valor fixo de ' + brl(opDia) + '.</p>';
+    h += '<p class="note">O custo operacional de cada animal no TIP usa o valor por cabeça·dia do mês. Meses sem nenhum lançamento usam o valor fixo de ' + brl(opDia) + '.</p>';
     return h;
   }
 
@@ -236,16 +236,16 @@
     const sanM = x => T.SAN().reduce((s, e) => ym(e.data) === x ? s + num(e.valor) : s, 0);
     const opM = x => C.tot.get(x) || 0;
     const nut = fornM(m), san = sanM(m), op = opM(m), tot = nut + san + op, dd = (C.dias.get(m) || 0);
-    let h = head('Painel geral', 'Confinamento (nutrição e sanidade) e operacional juntos') + mSel(C);
+    let h = head('Painel geral', 'TIP (nutrição e sanidade) e operacional juntos') + mSel(C);
     h += '<div class="stats"><div class="card stat"><div class="l">Custo total do mês</div><div class="v">' + brl(tot) + '</div></div>' +
       '<div class="card stat"><div class="l">Por cabeça · dia</div><div class="v">' + (dd ? brl(tot / dd) : '—') + '</div><div class="s">' + fmt(cabMes(C, m), 0) + ' cabeças</div></div></div>';
-    const parts = [['Nutrição (confinamento)', nut, COR[0]], ['Sanidade (confinamento)', san, COR[2]], ['Operacional', op, COR[1]]];
+    const parts = [['Nutrição (TIP)', nut, COR[0]], ['Sanidade (TIP)', san, COR[2]], ['Operacional', op, COR[1]]];
     h += '<div class="card" style="margin-top:12px"><h3>Composição · ' + mLb(m) + '</h3>' + hbars(parts.map(p => ({ l: p[0], v: p[1], c: p[2], s: tot ? fmt(p[1] / tot * 100, 0) + '%' : '' })), brl) + '</div>';
     const ms = []; for (let i = 7; i >= 0; i--) ms.push(mAdd(mCur(), -i));
     h += '<div class="card" style="margin-top:12px"><h3>Evolução mensal</h3>' + vbars(ms.map(x => ({ m: x, on: x === m, parts: [{ v: fornM(x), c: COR[0], n: 'Nutrição' }, { v: sanM(x), c: COR[2], n: 'Sanidade' }, { v: opM(x), c: COR[1], n: 'Operacional' }] })), k) + legenda(parts.map(p => ({ c: p[2], n: p[0] }))) + '</div>';
     const pc = C.porCat.get(m);
     if (pc && pc.size) h += '<div class="card" style="margin-top:12px"><h3>Operacional por categoria</h3>' + hbars([...pc.entries()].map(([id, v]) => ({ l: nomeCat(id), v })).sort((a, b) => b.v - a.v), brl) + '</div>';
-    return h + '<div class="acts" style="margin-top:12px"><a class="btn sec" href="#painel">Abrir TIP Confinamento</a><a class="btn sec" href="#op">Abrir Custo operacional</a></div><p class="note">Não inclui a compra dos animais. Nutrição e sanidade são os valores lançados no mês (fornecimento e sanidade).</p>';
+    return h + '<div class="acts" style="margin-top:12px"><a class="btn sec" href="#painel">Abrir TIP</a><a class="btn sec" href="#op">Abrir Custo operacional</a></div><p class="note">Não inclui a compra dos animais. Nutrição e sanidade são os valores lançados no mês (fornecimento e sanidade).</p>';
   };
 
   /* ---------- formulários ---------- */
