@@ -78,9 +78,10 @@
         const d = T.diffDias(ini, ate) + 1; if (d > 0) dias.set(m, (dias.get(m) || 0) + d);
       }
     });
-    const rate = new Map();
-    tot.forEach((v, m) => { const dd = dias.get(m) || 0; if (v > 0 && dd > 0) rate.set(m, v / dd); });
-    CACHE = { key, rev, h, nd, tot, porCat, itens, dias, rate, di };
+    const rate = new Map(), rateAll = new Map();
+    const fech = new Set(of('fech').map(x => x.mes));
+    tot.forEach((v, m) => { const dd = dias.get(m) || 0; if (v > 0 && dd > 0) { rateAll.set(m, v / dd); if (fech.has(m)) rate.set(m, v / dd); } });
+    CACHE = { key, rev, h, nd, tot, porCat, itens, dias, rate, rateAll, di, fech };
     return CACHE;
   }
   const temDados = () => D().some(x => x.t === 'lan' || x.t === 'da');
@@ -96,6 +97,19 @@
         const m = ym(d), fimM = m + '-' + String(mDias(m)).padStart(2, '0'), f = e < fimM ? e : fimM;
         const n = T.diffDias(d, f) + 1, r = C.rate.has(m) ? C.rate.get(m) : opDia;
         tot += n * r; d = addDias(f, 1);
+      }
+    });
+    return tot;
+  }
+
+  /* custo operacional REAL do animal (o que foi lançado, mesmo com o mês em aberto): para comparar com o que se cobra */
+  function opReal(a, loteId, de, ate) {
+    const C = calc(); let tot = 0;
+    T.ivNoLote(a, loteId, de, ate).forEach(([s, e]) => {
+      let d = s;
+      while (d <= e) {
+        const m = ym(d), fimM = m + '-' + String(mDias(m)).padStart(2, '0'), f = e < fimM ? e : fimM;
+        tot += (T.diffDias(d, f) + 1) * (C.rateAll.get(m) || 0); d = addDias(f, 1);
       }
     });
     return tot;
@@ -159,13 +173,16 @@
   };
 
   function opResumo(C, m) {
-    const tot = C.tot.get(m) || 0, rate = C.rate.get(m), cab = cabMes(C, m), opDia = T.opDia();
+    const tot = C.tot.get(m) || 0, rate = C.rate.get(m), cab = cabMes(C, m), opDia = T.opDia(), fechado = C.fech.has(m), prev = (tot > 0 && (C.dias.get(m) || 0) > 0) ? tot / C.dias.get(m) : null;
     let h = mSel(C);
-    if (!temDados()) h += '<div class="card" style="margin-bottom:12px"><b>Ainda sem lançamentos</b><p class="note" style="margin:6px 0 0">Enquanto não houver lançamentos, o TIP usa o valor fixo de ' + brl(opDia) + ' por cabeça/dia (tela Custos do lote). Lance os custos e o sistema passa a calcular o valor real de cada mês.</p></div>';
+    if (tot > 0) h += fechado
+      ? '<div class="card" style="margin-bottom:12px;border-color:var(--green)"><b>Mês fechado</b><p class="note" style="margin:6px 0 10px">O TIP e as cobranças usam o valor calculado deste mês: ' + brl(rate) + ' por cabeça/dia.</p><button class="btn sm line" data-act="opFech" data-id="' + m + '">Reabrir mês</button></div>'
+      : '<div class="card" style="margin-bottom:12px;border-color:var(--gold,#e0a526)"><b>Mês em aberto</b><p class="note" style="margin:6px 0 10px">Enquanto não fechar, o TIP e as cobranças usam o valor fixo de ' + brl(opDia) + ' por cabeça/dia. Quando terminar de lançar os custos deste mês' + (prev != null ? ' (hoje daria ' + brl(prev) + ')' : '') + ', feche o mês.</p><button class="btn sm" data-act="opFech" data-id="' + m + '">Fechar mês e usar o valor calculado</button></div>';
+    if (!temDados()) h += '<div class="card" style="margin-bottom:12px"><b>Ainda sem lançamentos</b><p class="note" style="margin:6px 0 0">Enquanto não houver lançamentos (e o mês não for fechado), o TIP usa o valor fixo de ' + brl(opDia) + ' por cabeça/dia (tela Custos do lote). Lance os custos e o sistema passa a calcular o valor real de cada mês.</p></div>';
     h += '<div class="stats"><div class="card stat"><div class="l">Custo do mês</div><div class="v">' + brl(tot) + '</div></div>' +
-      '<div class="card stat"><div class="l">Por cabeça · dia</div><div class="v">' + (rate != null ? brl(rate) : brl(opDia)) + '</div><div class="s">' + (rate != null ? 'calculado' : 'sem lançamento: valor fixo') + '</div></div>' +
+      '<div class="card stat"><div class="l">Por cabeça · dia</div><div class="v">' + (rate != null ? brl(rate) : brl(opDia)) + '</div><div class="s">' + (rate != null ? 'calculado (mês fechado)' : tot > 0 ? 'mês em aberto: valor fixo' : 'sem lançamento: valor fixo') + '</div></div>' +
       '<div class="card stat"><div class="l">Cabeças (média)</div><div class="v">' + fmt(cab, 0) + '</div><div class="s">todos os animais da fazenda</div></div>' +
-      '<div class="card stat"><div class="l">Por cabeça · mês</div><div class="v">' + (rate != null ? brl(rate * mDias(m)) : '—') + '</div></div></div>';
+      '<div class="card stat"><div class="l">Por cabeça · mês</div><div class="v">' + ((rate != null ? rate : prev) != null ? brl((rate != null ? rate : prev) * mDias(m)) : '—') + '</div>' + (rate == null && prev != null ? '<div class="s">previsto</div>' : '') + '</div></div>';
     /* por categoria */
     const pc = C.porCat.get(m);
     if (pc && pc.size) {
@@ -185,7 +202,7 @@
       const rr = ms.map(x => ({ l: mLb(x), v: C.rate.has(x) ? C.rate.get(x) : 0 })).filter(r => r.v > 0);
       if (rr.length > 1) h += '<div class="card" style="margin-top:12px"><h3>Custo por cabeça · dia</h3>' + hbars(rr, v => brl(v)) + '</div>';
     }
-    h += '<p class="note">O custo operacional de cada animal no TIP usa o valor por cabeça·dia do mês. Meses sem nenhum lançamento usam o valor fixo de ' + brl(opDia) + '.</p>';
+    h += '<p class="note">O custo operacional de cada animal no TIP usa o valor por cabeça·dia do mês. Meses em aberto ou sem lançamento usam o valor fixo de ' + brl(opDia) + '.</p>';
     return h;
   }
 
@@ -320,6 +337,7 @@
   /* ---------- ações ---------- */
   Object.assign(ACT, {
     opTab: d => { F.tab = d.id; T.render(false); },
+    opFech: d => { const x = of('fech').find(f => f.mes === d.id); if (x) T.S.op.docs = D().filter(o => o !== x); else novo({ t: 'fech', mes: d.id }); T.save(); T.render(false); toast(x ? 'Mês reaberto: volta ao valor fixo' : 'Mês fechado'); },
     opLanNovo: () => mLan(''), opLanEd: d => mLan(d.id),
     opCatNova: () => mCat(''), opCatEd: d => mCat(d.id),
     opMaqNova: () => mMaq(''), opMaqEd: d => mMaq(d.id),
@@ -336,7 +354,7 @@
   document.addEventListener('change', e => {
     if (e.target && e.target.id === 'ol-c') { const c = byId(of('cat'), e.target.value), n = document.getElementById('ol-n'); if (c && c.inv && n && (num(n.value) || 1) <= 1) n.value = String(MESES_INV); } if (e.target && e.target.id === 'op-mes') { F.mes = e.target.value; T.render(false); } });
 
-  window.OP = { bar, opAnimal, docs: () => D(), rev: () => 1 };
+  window.OP = { bar, opAnimal, opReal, docs: () => D(), rev: () => 1 };
   T.TITULOS.op = 'Custo operacional'; T.TITULOS.geral = 'Painel geral';
   T.render(false);
 })();
