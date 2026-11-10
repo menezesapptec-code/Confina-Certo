@@ -175,14 +175,11 @@
   function opResumo(C, m) {
     const tot = C.tot.get(m) || 0, rate = C.rate.get(m), cab = cabMes(C, m), opDia = T.opDia(), fechado = C.fech.has(m), prev = (tot > 0 && (C.dias.get(m) || 0) > 0) ? tot / C.dias.get(m) : null;
     let h = mSel(C);
-    if (tot > 0) h += fechado
-      ? '<div class="card" style="margin-bottom:12px;border-color:var(--green)"><b>Mês fechado</b><p class="note" style="margin:6px 0 10px">O TIP e as cobranças usam o valor calculado deste mês: ' + brl(rate) + ' por cabeça/dia.</p><button class="btn sm line" data-act="opFech" data-id="' + m + '">Reabrir mês</button></div>'
-      : '<div class="card" style="margin-bottom:12px;border-color:var(--gold,#e0a526)"><b>Mês em aberto</b><p class="note" style="margin:6px 0 10px">Enquanto não fechar, o TIP e as cobranças usam o valor fixo de ' + brl(opDia) + ' por cabeça/dia. Quando terminar de lançar os custos deste mês' + (prev != null ? ' (hoje daria ' + brl(prev) + ')' : '') + ', feche o mês.</p><button class="btn sm" data-act="opFech" data-id="' + m + '">Fechar mês e usar o valor calculado</button></div>';
-    if (!temDados()) h += '<div class="card" style="margin-bottom:12px"><b>Ainda sem lançamentos</b><p class="note" style="margin:6px 0 0">Enquanto não houver lançamentos (e o mês não for fechado), o TIP usa o valor fixo de ' + brl(opDia) + ' por cabeça/dia (tela Custos do lote). Lance os custos e o sistema passa a calcular o valor real de cada mês.</p></div>';
+    h += '<div class="card" style="margin-bottom:12px"><b>Controle à parte</b><p class="note" style="margin:6px 0 0">Este painel só acompanha o que você gasta. Ele não entra no custo do TIP nem na cobrança: lá vale o valor manual de ' + brl(opDia) + ' por cabeça/dia (ou o que você digitar).</p></div>';
     h += '<div class="stats"><div class="card stat"><div class="l">Custo do mês</div><div class="v">' + brl(tot) + '</div></div>' +
-      '<div class="card stat"><div class="l">Por cabeça · dia</div><div class="v">' + (rate != null ? brl(rate) : brl(opDia)) + '</div><div class="s">' + (rate != null ? 'calculado (mês fechado)' : tot > 0 ? 'mês em aberto: valor fixo' : 'sem lançamento: valor fixo') + '</div></div>' +
+      '<div class="card stat"><div class="l">Por cabeça · dia</div><div class="v">' + (prev != null ? brl(prev) : '—') + '</div><div class="s">gasto real do mês ÷ animais</div></div>' +
       '<div class="card stat"><div class="l">Cabeças (média)</div><div class="v">' + fmt(cab, 0) + '</div><div class="s">todos os animais da fazenda</div></div>' +
-      '<div class="card stat"><div class="l">Por cabeça · mês</div><div class="v">' + ((rate != null ? rate : prev) != null ? brl((rate != null ? rate : prev) * mDias(m)) : '—') + '</div>' + (rate == null && prev != null ? '<div class="s">previsto</div>' : '') + '</div></div>';
+      '<div class="card stat"><div class="l">Por cabeça · mês</div><div class="v">' + (prev != null ? brl(prev * mDias(m)) : '—') + '</div></div></div>';
     /* por categoria */
     const pc = C.porCat.get(m);
     if (pc && pc.size) {
@@ -202,7 +199,7 @@
       const rr = ms.map(x => ({ l: mLb(x), v: C.rate.has(x) ? C.rate.get(x) : 0 })).filter(r => r.v > 0);
       if (rr.length > 1) h += '<div class="card" style="margin-top:12px"><h3>Custo por cabeça · dia</h3>' + hbars(rr, v => brl(v)) + '</div>';
     }
-    h += '<p class="note">O custo operacional de cada animal no TIP usa o valor por cabeça·dia do mês. Meses em aberto ou sem lançamento usam o valor fixo de ' + brl(opDia) + '.</p>';
+    
     return h;
   }
 
