@@ -1,6 +1,6 @@
 /* ===== Custo operacional (centro de custo) — módulo separado do TIP Control =====
    Se este arquivo não carregar, o TIP Control continua funcionando como antes (o R$/cab·dia manual segue valendo).
-   Dados: cada item é um documento em  u/{uid}/cfg/op_xxxx  (tipos: cat, maq, lan, dc, da). */
+   Dados: cada item é um documento em  u/{uid}/cfg/op_xxxx  (tipos: cat, maq, lan, dc, da, sp, sc, ss). */
 (function () {
   'use strict';
   const T = window.TIP;
@@ -43,6 +43,22 @@
     return { cp, ab, lc, la, estoque: lc - la, pmGeral, pm, custoAb, valorEstoque: (lc - la) * pmGeral };
   }
 
+  /* ---------- sanidade (operacional): produtos, compras e saídas com preço médio ---------- */
+  function catSan() {
+    let c = of('cat').find(x => x.san) || of('cat').find(x => /sanidade/i.test(x.nome));
+    if (!c) c = novo({ t: 'cat', nome: 'Sanidade', san: true }); else if (!c.san) c.san = true;
+    return c;
+  }
+  const prods = () => of('sp').sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  function sanInfo() {
+    const cmp = of('sc').sort((a, b) => a.data < b.data ? -1 : 1), sai = of('ss').sort((a, b) => a.data < b.data ? -1 : 1);
+    const pm = (pid, d) => { let q = 0, v = 0; cmp.forEach(x => { if (x.prodId === pid && x.data <= d) { q += num(x.qtd); v += num(x.valor); } }); if (q > 0) return v / q; cmp.forEach(x => { if (x.prodId === pid) { q += num(x.qtd); v += num(x.valor); } }); return q > 0 ? v / q : 0; };
+    const custoSai = x => num(x.qtd) * pm(x.prodId, x.data);
+    const por = new Map();
+    prods().forEach(p => { const q = sum(cmp.filter(x => x.prodId === p.id), x => num(x.qtd)), v = sum(cmp.filter(x => x.prodId === p.id), x => num(x.valor)), s = sum(sai.filter(x => x.prodId === p.id), x => num(x.qtd)); const m = q > 0 ? v / q : 0; por.set(p.id, { p, q, s, estoque: q - s, pm: m, valor: (q - s) * m }); });
+    return { cmp, sai, por, custoSai, valorEstoque: sum([...por.values()], r => Math.max(0, r.valor)) };
+  }
+
   /* ---------- rateio mensal ---------- */
   function lanMeses(l) {
     const m0 = ym(l.data);
@@ -67,6 +83,8 @@
     });
     const di = dieselInfo(), cd = of('cat').find(x => x.diesel);
     di.ab.forEach(x => { const v = di.custoAb(x); if (v > 0 && x.data) add(ym(x.data), cd ? cd.id : '', v, { tipo: 'da', o: x, v }); });
+    const si = sanInfo(), cs = of('cat').find(x => x.san);
+    si.sai.forEach(x => { const v = si.custoSai(x); if (v > 0 && x.data) add(ym(x.data), cs ? cs.id : '', v, { tipo: 'ss', o: x, v }); });
     /* dias-animal por mês (todos os animais da fazenda; quem não foi vendido conta até hoje e segue igual nos meses futuros) */
     const dias = new Map();
     T.ALLA().forEach(a => {
@@ -81,10 +99,10 @@
     const rate = new Map(), rateAll = new Map();
     const fech = new Set(of('fech').map(x => x.mes));
     tot.forEach((v, m) => { const dd = dias.get(m) || 0; if (v > 0 && dd > 0) { rateAll.set(m, v / dd); if (fech.has(m)) rate.set(m, v / dd); } });
-    CACHE = { key, rev, h, nd, tot, porCat, itens, dias, rate, rateAll, di, fech };
+    CACHE = { key, rev, h, nd, tot, porCat, itens, dias, rate, rateAll, di, si, fech };
     return CACHE;
   }
-  const temDados = () => D().some(x => x.t === 'lan' || x.t === 'da');
+  const temDados = () => D().some(x => x.t === 'lan' || x.t === 'da' || x.t === 'ss');
   const cabMes = (C, m) => { const d = C.dias.get(m) || 0; return d / mDias(m); };
 
   /* ---------- gancho do custo do lote: custo operacional do animal (usado por custoLinhas) ---------- */
@@ -162,12 +180,13 @@
   /* ---------- OPERACIONAL ---------- */
   VIEWS.op = () => {
     const C = calc(), m = mesSel(), tab = F.tab;
-    const tabs = [['resumo', 'Resumo'], ['lanc', 'Lançamentos'], ['diesel', 'Diesel'], ['cad', 'Cadastros']];
+    const tabs = [['resumo', 'Resumo'], ['lanc', 'Lançamentos'], ['diesel', 'Diesel'], ['san', 'Sanidade'], ['cad', 'Cadastros']];
     const ch = '<div class="chips">' + tabs.map(([id, t]) => '<button class="chip ' + (tab === id ? 'on' : '') + '" data-act="opTab" data-id="' + id + '">' + t + '</button>').join('') + '</div>';
-    let h = head('Custo operacional', 'Tudo que a fazenda gasta fora de nutrição e sanidade, rateado por cabeça', '<button class="btn sm" data-act="opLanNovo">+ Custo</button>') + ch;
+    let h = head('Custo operacional', 'Controle à parte do que a fazenda gasta, rateado por cabeça (não entra no TIP)', '<button class="btn sm" data-act="opLanNovo">+ Custo</button>') + ch;
     if (tab === 'resumo') h += opResumo(C, m);
     else if (tab === 'lanc') h += mSel(C) + opLanc(C, m);
     else if (tab === 'diesel') h += opDiesel(C, m);
+    else if (tab === 'san') h += opSan(C, m);
     else h += opCad();
     return h;
   };
@@ -212,6 +231,9 @@
       if (x.tipo === 'lan') {
         const mm = lanMeses(o);
         h += '<div data-act="opLanEd" data-id="' + o.id + '" style="display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);cursor:pointer"><div><b>' + esc(o.desc || nomeCat(o.catId)) + '</b><div class="note" style="margin:2px 0 0">' + fmtData(o.data) + ' · ' + esc(nomeCat(o.catId)) + (mm.n > 1 ? ' · rateio ' + mm.n + ' meses (total ' + brl(num(o.valor)) + ')' : '') + '</div></div><b style="white-space:nowrap">' + brl(x.v) + '</b></div>';
+      } else if (x.tipo === 'ss') {
+        const pr = byId(of('sp'), o.prodId);
+        h += '<div style="display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)"><div><b>Sanidade · ' + esc(pr ? pr.nome : 'produto') + '</b><div class="note" style="margin:2px 0 0">' + fmtData(o.data) + ' · ' + fmt(num(o.qtd), 2) + ' ' + esc(pr ? pr.un : '') + (o.obs ? ' · ' + esc(o.obs) : '') + ' · do estoque</div></div><b style="white-space:nowrap">' + brl(x.v) + '</b></div>';
       } else {
         const mq = byId(of('maq'), o.maqId);
         h += '<div style="display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)"><div><b>Abastecimento · ' + esc(mq ? mq.nome : 'sem máquina') + '</b><div class="note" style="margin:2px 0 0">' + fmtData(o.data) + ' · ' + fmt(num(o.litros), 0) + ' L · do estoque de diesel</div></div><b style="white-space:nowrap">' + brl(x.v) + '</b></div>';
@@ -231,6 +253,19 @@
     h += '<div class="card" style="margin-top:12px"><h3>Compras</h3>' + (di.cp.length ? di.cp.slice().reverse().slice(0, 15).map(x => '<div data-act="opDcEd" data-id="' + x.id + '" style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer"><span>' + fmtData(x.data) + ' · ' + fmt(num(x.litros), 0) + ' L' + (x.forn ? ' · ' + esc(x.forn) : '') + '</span><b>' + brl(num(x.valor)) + '</b></div>').join('') : '<p class="note">Nenhuma compra lançada.</p>') + '</div>';
     h += '<div class="card" style="margin-top:12px"><h3>Abastecimentos</h3>' + (di.ab.length ? di.ab.slice().reverse().slice(0, 25).map(x => { const mq = byId(of('maq'), x.maqId); return '<div data-act="opDaEd" data-id="' + x.id + '" style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer"><span>' + fmtData(x.data) + ' · ' + esc(mq ? mq.nome : 'sem máquina') + ' · ' + fmt(num(x.litros), 0) + ' L</span><b>' + brl(di.custoAb(x)) + '</b></div>'; }).join('') : '<p class="note">Nenhum abastecimento lançado.</p>') + '</div>';
     return h + '<p class="note">O diesel entra no custo quando é abastecido (litros × preço médio das compras), não quando é comprado.</p>';
+  }
+
+  function opSan(C, m) {
+    const si = C.si, P = prods();
+    let h = '<div class="stats"><div class="card stat"><div class="l">Valor em estoque</div><div class="v">' + brl(si.valorEstoque) + '</div><div class="s">' + P.length + ' produto(s)</div></div>' +
+      '<div class="card stat"><div class="l">Saídas em ' + mLb(m) + '</div><div class="v">' + brl(sum(si.sai.filter(x => ym(x.data) === m), x => si.custoSai(x))) + '</div></div></div>';
+    h += '<div class="acts"><button class="btn" data-act="opScNovo">+ Compra</button><button class="btn sec" data-act="opSsNovo">+ Saída</button><button class="btn sec" data-act="opSpNovo">+ Produto</button></div>';
+    h += '<div class="card" style="margin-top:12px"><h3>Estoque</h3>' + (P.length ? P.map(p => { const r = si.por.get(p.id); return '<div data-act="opSpEd" data-id="' + p.id + '" style="display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer"><span><b>' + esc(p.nome) + '</b><span class="note" style="display:block;margin:2px 0 0">' + (r.pm ? brl(r.pm) + '/' + esc(p.un) : 'sem compra') + '</span></span><b style="white-space:nowrap;color:' + (r.estoque < -0.0005 ? 'var(--red)' : '') + '">' + fmt(r.estoque, 2) + ' ' + esc(p.un) + '</b></div>'; }).join('') : '<p class="note">Cadastre os produtos (vacina, vermífugo, antibiótico...) em + Produto, depois lance as compras.</p>') + '</div>';
+    if (P.some(p => si.por.get(p.id).estoque < -0.0005)) h += '<div class="card" style="margin-top:12px;border-color:var(--red)"><b style="color:var(--red)">Estoque negativo</b><p class="note" style="margin:4px 0 0">Saiu mais do que foi comprado em algum produto. Confira se falta lançar uma compra.</p></div>';
+    const nm = id => { const p = byId(of('sp'), id); return p ? p.nome : 'produto'; }, un = id => { const p = byId(of('sp'), id); return p ? p.un : ''; };
+    h += '<div class="card" style="margin-top:12px"><h3>Compras</h3>' + (si.cmp.length ? si.cmp.slice().reverse().slice(0, 15).map(x => '<div data-act="opScEd" data-id="' + x.id + '" style="display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer"><span>' + fmtData(x.data) + ' · ' + esc(nm(x.prodId)) + ' · ' + fmt(num(x.qtd), 2) + ' ' + esc(un(x.prodId)) + (x.forn ? ' · ' + esc(x.forn) : '') + '</span><b>' + brl(num(x.valor)) + '</b></div>').join('') : '<p class="note">Nenhuma compra lançada.</p>') + '</div>';
+    h += '<div class="card" style="margin-top:12px"><h3>Saídas</h3>' + (si.sai.length ? si.sai.slice().reverse().slice(0, 25).map(x => '<div data-act="opSsEd" data-id="' + x.id + '" style="display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer"><span>' + fmtData(x.data) + ' · ' + esc(nm(x.prodId)) + ' · ' + fmt(num(x.qtd), 2) + ' ' + esc(un(x.prodId)) + (x.obs ? ' · ' + esc(x.obs) : '') + '</span><b>' + brl(si.custoSai(x)) + '</b></div>').join('') : '<p class="note">Nenhuma saída lançada.</p>') + '</div>';
+    return h + '<p class="note">A sanidade entra no custo operacional quando o produto sai do estoque (quantidade × preço médio das compras), não quando é comprado. Fica só aqui: não altera o TIP nem a cobrança.</p>';
   }
 
   function opCad() {
@@ -331,6 +366,50 @@
     catDiesel(); T.save(); closeModal(); T.render(false); toast('Abastecimento salvo');
   };
 
+  const UNS = [['dose', 'dose'], ['mL', 'mL'], ['frasco', 'frasco'], ['un', 'unidade'], ['kg', 'kg'], ['g', 'g'], ['L', 'L']];
+  const optP = () => prods().map(p => [p.id, p.nome + ' (' + p.un + ')']);
+  const dec = v => v == null ? '' : String(v).replace('.', ',');
+  const delB = id => id ? '<button type="button" class="btn line block" style="margin-top:8px;color:var(--red)" data-act="opDel" data-id="' + id + '">Excluir</button>' : '';
+  function mSp(id) {
+    const c = id ? byId(of('sp'), id) : { nome: '', un: 'dose' }; if (!c) return;
+    sheet('<h2>' + (id ? 'Produto' : 'Novo produto') + '</h2><form data-form="opSp" data-id="' + (id || '') + '">' + fld('sp-n', 'Nome', c.nome, { txt: 1, ph: 'Ex.: Vacina aftosa' }) + selF('sp-u', 'Unidade', UNS, c.un || 'dose') + '<button class="btn block">Salvar</button>' + delB(id) + '</form>');
+  }
+  FORMS.opSp = () => {
+    const id = document.querySelector('[data-form=opSp]').dataset.id, nome = document.getElementById('sp-n').value.trim(), un = document.getElementById('sp-u').value;
+    if (!nome) return toast('Informe o nome');
+    if (prods().some(p => p.id !== id && p.nome.toLowerCase() === nome.toLowerCase())) return toast('Já existe um produto com esse nome');
+    const o = id ? byId(of('sp'), id) : novo({ t: 'sp' }); Object.assign(o, { nome, un }); catSan(); T.save(); closeModal(); T.render(false); toast('Produto salvo');
+  };
+  function mSc(id) {
+    const c = id ? byId(of('sc'), id) : { data: hoje() }; if (!c) return;
+    if (!prods().length) { toast('Cadastre um produto primeiro (+ Produto)'); return mSp(''); }
+    sheet('<h2>Compra de sanidade</h2><form data-form="opSc" data-id="' + (id || '') + '">' + fld('sc-d', 'Data', c.data, { type: 'date' }) + selF('sc-p', 'Produto', optP(), c.prodId || prods()[0].id) +
+      '<div class="cfgrow">' + fld('sc-q', 'Quantidade', dec(c.qtd)) + fld('sc-v', 'Valor total (R$)', dec(c.valor)) + '</div>' + fld('sc-f', 'Fornecedor (opcional)', c.forn || '', { txt: 1 }) + '<button class="btn block">Salvar</button>' + delB(id) + '</form>');
+  }
+  FORMS.opSc = () => {
+    const id = document.querySelector('[data-form=opSc]').dataset.id, data = document.getElementById('sc-d').value, p = document.getElementById('sc-p').value, q = impNum(document.getElementById('sc-q').value), v = impNum(document.getElementById('sc-v').value);
+    if (!data) return toast('Informe a data'); if (!(q > 0)) return toast('Informe a quantidade'); if (!(v > 0)) return toast('Informe o valor');
+    const o = id ? byId(of('sc'), id) : novo({ t: 'sc' }); Object.assign(o, { data, prodId: p, qtd: q, valor: r2(v), forn: document.getElementById('sc-f').value.trim() }); if (!o.forn) delete o.forn;
+    catSan(); T.save(); closeModal(); T.render(false); toast('Compra salva');
+  };
+  function mSs(id) {
+    const c = id ? byId(of('ss'), id) : { data: hoje() }; if (!c) return;
+    if (!prods().length) { toast('Cadastre um produto primeiro (+ Produto)'); return mSp(''); }
+    sheet('<h2>Saída de sanidade</h2><form data-form="opSs" data-id="' + (id || '') + '">' + fld('ss-d', 'Data', c.data, { type: 'date' }) + selF('ss-p', 'Produto', optP(), c.prodId || prods()[0].id) +
+      fld('ss-q', 'Quantidade usada', dec(c.qtd)) + '<p class="note" id="ss-av" style="margin:0 0 10px"></p>' + fld('ss-o', 'Observação (opcional)', c.obs || '', { txt: 1, ph: 'Ex.: vacinação do lote 4' }) + '<button class="btn block">Salvar</button>' + delB(id) + '</form>');
+    ssAv();
+  }
+  function ssAv() {
+    const el = document.getElementById('ss-av'), sel = document.getElementById('ss-p'); if (!el || !sel) return;
+    const r = sanInfo().por.get(sel.value); el.textContent = r ? 'Estoque atual: ' + fmt(r.estoque, 2) + ' ' + r.p.un + (r.pm ? ' · ' + brl(r.pm) + '/' + r.p.un : '') : '';
+  }
+  FORMS.opSs = () => {
+    const id = document.querySelector('[data-form=opSs]').dataset.id, data = document.getElementById('ss-d').value, p = document.getElementById('ss-p').value, q = impNum(document.getElementById('ss-q').value);
+    if (!data) return toast('Informe a data'); if (!(q > 0)) return toast('Informe a quantidade');
+    const o = id ? byId(of('ss'), id) : novo({ t: 'ss' }); Object.assign(o, { data, prodId: p, qtd: q, obs: document.getElementById('ss-o').value.trim() }); if (!o.obs) delete o.obs;
+    catSan(); T.save(); closeModal(); T.render(false); toast('Saída salva');
+  };
+
   /* ---------- ações ---------- */
   Object.assign(ACT, {
     opTab: d => { F.tab = d.id; T.render(false); },
@@ -338,18 +417,20 @@
     opLanNovo: () => mLan(''), opLanEd: d => mLan(d.id),
     opCatNova: () => mCat(''), opCatEd: d => mCat(d.id),
     opMaqNova: () => mMaq(''), opMaqEd: d => mMaq(d.id),
+    opSpNovo: () => mSp(''), opSpEd: d => mSp(d.id), opScNovo: () => mSc(''), opScEd: d => mSc(d.id), opSsNovo: () => mSs(''), opSsEd: d => mSs(d.id),
     opDcNovo: () => mDc(''), opDcEd: d => mDc(d.id), opDaNovo: () => mDa(''), opDaEd: d => mDa(d.id),
-    opCatSug: () => { SUG.forEach(n => { if (!cats().some(c => c.nome === n)) { const o = novo({ t: 'cat', nome: n }); if (/diesel/i.test(n)) o.diesel = true; if (/^investimento/i.test(n)) o.inv = true; } }); T.save(); T.render(false); toast('Categorias criadas'); },
+    opCatSug: () => { SUG.forEach(n => { if (!cats().some(c => c.nome === n)) { const o = novo({ t: 'cat', nome: n }); if (/diesel/i.test(n)) o.diesel = true; if (/^sanidade/i.test(n)) o.san = true; if (/^investimento/i.test(n)) o.inv = true; } }); T.save(); T.render(false); toast('Categorias criadas'); },
     opDel: (d, t) => {
       if (!t.dataset.arm) { t.dataset.arm = 1; t.textContent = 'Toque de novo para confirmar'; return; }
       const o = byId(D(), d.id); if (!o) return;
-      if (o.t === 'cat' && (of('lan').some(l => l.catId === o.id) || o.diesel && of('da').length)) { toast('Esta categoria tem lançamentos. Mude os lançamentos antes.'); delete t.dataset.arm; t.textContent = 'Excluir'; return; }
+      if (o.t === 'cat' && (of('lan').some(l => l.catId === o.id) || o.diesel && of('da').length || o.san && of('ss').length)) { toast('Esta categoria tem lançamentos. Mude os lançamentos antes.'); delete t.dataset.arm; t.textContent = 'Excluir'; return; }
+      if (o.t === 'sp' && (of('sc').some(x => x.prodId === o.id) || of('ss').some(x => x.prodId === o.id))) { toast('Este produto tem compras ou saídas. Exclua esses lançamentos antes.'); delete t.dataset.arm; t.textContent = 'Excluir'; return; }
       if (o.t === 'maq' && of('da').some(a => a.maqId === o.id)) { toast('Esta máquina tem abastecimentos. Exclua ou mude antes.'); delete t.dataset.arm; t.textContent = 'Excluir'; return; }
       T.S.op.docs = D().filter(x => x.id !== d.id); T.save(); closeModal(); T.render(false); toast('Excluído');
     }
   });
   document.addEventListener('change', e => {
-    if (e.target && e.target.id === 'ol-c') { const c = byId(of('cat'), e.target.value), n = document.getElementById('ol-n'); if (c && c.inv && n && (num(n.value) || 1) <= 1) n.value = String(MESES_INV); } if (e.target && e.target.id === 'op-mes') { F.mes = e.target.value; T.render(false); } });
+    if (e.target && e.target.id === 'ol-c') { const c = byId(of('cat'), e.target.value), n = document.getElementById('ol-n'); if (c && c.inv && n && (num(n.value) || 1) <= 1) n.value = String(MESES_INV); } if (e.target && e.target.id === 'ss-p') ssAv(); if (e.target && e.target.id === 'op-mes') { F.mes = e.target.value; T.render(false); } });
 
   window.OP = { bar, opAnimal, opReal, docs: () => D(), rev: () => 1 };
   T.TITULOS.op = 'Custo operacional'; T.TITULOS.geral = 'Painel geral';
