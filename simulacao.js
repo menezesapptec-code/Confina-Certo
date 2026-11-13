@@ -13,7 +13,7 @@
 
   const faseNova = (nome) => ({ on: true, nome, dias: '', gmd: '', pv: '', kg: '', op: '' });
   const novaSim = () => ({
-    id: '', nome: '', modo: 'lote', loteId: '', dono: '', ids: [], n: '', pesoIn: '', pesoAuto: true, rcIni: '', rcMeta: '', compra: '', taxa: '', venda: '', de: '', ate: '', real: '', preco: '', imp: '', san: '',
+    id: '', nome: '', modo: 'lote', loteId: '', donos: [], ids: [], n: '', pesoIn: '', pesoAuto: true, rcIni: '', rcMeta: '', compra: '', taxa: '', venda: '', de: '', ate: '', real: '', preco: '', imp: '', san: '',
     fases: [faseNova('Adaptação'), faseNova('Engorda'), faseNova('Terminação')]
   });
   let CUR = novaSim(), FQ = '';
@@ -25,7 +25,7 @@
     const s = new Set(CUR.ids); return A.filter(a => s.has(a.id));
   };
   const donoDe = a => String(a.dono || '').trim();
-  const visiveis = () => (T.S.animais || []).filter(a => (!CUR.loteId || a.loteId === CUR.loteId) && (!CUR.dono || donoDe(a) === CUR.dono))
+  const visiveis = () => (T.S.animais || []).filter(a => (!CUR.loteId || a.loteId === CUR.loteId) && (!(CUR.donos || []).length || CUR.donos.includes(donoDe(a))))
     .sort((a, b) => String(a.brinco).localeCompare(String(b.brinco), 'pt-BR', { numeric: true }));
   const ultimoKg = a => { const p = T.pontosPeso(a); return p.length ? p[p.length - 1].kg : 0; };
   function autoPeso() {
@@ -128,7 +128,7 @@
     const S0 = T.S, A = visiveis(), s = new Set(CUR.ids);
     const lotes = (S0.lotes || []).filter(l => (S0.animais || []).some(a => a.loteId === l.id));
     const donos = [...new Set((S0.animais || []).map(donoDe).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')).map(d => [d, d]);
-    let h = selF('sm-lote', 'Lote', lotes.map(l => [l.id, l.nome]), CUR.loteId, 'Todos os lotes') + selF('sm-dono', 'Proprietário', donos, CUR.dono, 'Todos os proprietários') +
+    let h = selF('sm-lote', 'Lote', lotes.map(l => [l.id, l.nome]), CUR.loteId, 'Todos os lotes') + '<label>Proprietários</label><div style="display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px">' + donos.map(([d]) => '<label style="display:flex;gap:6px;align-items:center;padding:7px 10px;border:1px solid var(--line);border-radius:999px;font-size:13px"><input type="checkbox" class="sm-dk" data-d="' + esc(d) + '" ' + ((CUR.donos || []).includes(d) ? 'checked' : '') + ' style="width:18px;height:18px">' + esc(d) + '</label>').join('') + '</div><p class="note" style="margin:0 0 4px">' + ((CUR.donos || []).length ? 'Filtrando por ' + CUR.donos.length + ' proprietário(s).' : 'Nenhum marcado = todos os proprietários.') + '</p>' +
       '<p class="note" style="margin:0 0 4px">' + A.length + ' animal(is) neste filtro. Marque os que entram na simulação.</p>' +
       '<div style="display:flex;gap:8px;margin:6px 0"><button type="button" class="btn sm sec" data-act="smTodos">Marcar todos do filtro</button><button type="button" class="btn sm line" data-act="smNenhum">Limpar seleção</button></div>' +
       '<input id="sm-q" type="text" placeholder="Buscar brinco" value="' + esc(FQ) + '" style="margin-bottom:6px">';
@@ -186,15 +186,16 @@
   document.addEventListener('change', e => {
     const t = e.target, id = (t && t.id) || '';
     if (t && t.classList && t.classList.contains('sm-ck')) { const s = new Set(CUR.ids); if (t.checked) s.add(t.dataset.id); else s.delete(t.dataset.id); CUR.ids = [...s]; CUR.pesoAuto = true; aplicaAuto(); const p = document.getElementById('sm-pesoIn'); if (p) p.value = CUR.pesoIn; refresh(); return; }
+    if (t && t.classList && t.classList.contains('sm-dk')) { const s = new Set(CUR.donos || []); if (t.checked) s.add(t.dataset.d); else s.delete(t.dataset.d); CUR.donos = [...s]; if (CUR.modo === 'lote') CUR.ids = visiveis().map(a => a.id); CUR.pesoAuto = true; aplicaAuto(); redraw(); return; }
     const m = id.match(/^sm-fon(\d)$/); if (m) { CUR.fases[+m[1]].on = t.checked; refresh(); return; }
     if (id === 'sm-modo') { CUR.modo = t.value; CUR.pesoAuto = true; aplicaAuto(); redraw(); }
-    else if (id === 'sm-lote' || id === 'sm-dono') { if (id === 'sm-lote') CUR.loteId = t.value; else CUR.dono = t.value; if (CUR.modo === 'lote') CUR.ids = visiveis().map(a => a.id); CUR.pesoAuto = true; aplicaAuto(); redraw(); }
+    else if (id === 'sm-lote') { CUR.loteId = t.value; if (CUR.modo === 'lote') CUR.ids = visiveis().map(a => a.id); CUR.pesoAuto = true; aplicaAuto(); redraw(); }
   });
 
   const snapshot = () => Object.assign({}, JSON.parse(JSON.stringify(CUR)), { n2: nAnim() });
   Object.assign(ACT, {
     smNova: () => { CUR = novaSim(); T.render(false); },
-    smAbrir: d => { const x = D().find(o => o.id === d.id); if (!x) return; CUR = JSON.parse(JSON.stringify(x)); delete CUR.t; if (CUR.dono == null) CUR.dono = ''; if (CUR.modo === 'lote' && !CUR.ids.length && CUR.loteId) CUR.ids = (T.S.animais || []).filter(a => a.loteId === CUR.loteId).map(a => a.id); if (CUR.modo === 'manual' && !CUR.n && x.n2) CUR.n = String(x.n2); T.render(false); setTimeout(info, 0); },
+    smAbrir: d => { const x = D().find(o => o.id === d.id); if (!x) return; CUR = JSON.parse(JSON.stringify(x)); delete CUR.t; if (!CUR.donos) CUR.donos = CUR.dono ? [CUR.dono] : []; delete CUR.dono; if (CUR.modo === 'lote' && !CUR.ids.length && CUR.loteId) CUR.ids = (T.S.animais || []).filter(a => a.loteId === CUR.loteId).map(a => a.id); if (CUR.modo === 'manual' && !CUR.n && x.n2) CUR.n = String(x.n2); T.render(false); setTimeout(info, 0); },
     smSalva: () => {
       if (!CUR.nome.trim()) return toast('Dê um nome para a simulação');
       const o = CUR.id ? D().find(x => x.id === CUR.id) : null;
