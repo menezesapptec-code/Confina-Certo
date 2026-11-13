@@ -13,7 +13,7 @@
 
   const faseNova = (nome) => ({ on: true, nome, dias: '', gmd: '', pv: '', kg: '', op: '' });
   const novaSim = () => ({
-    id: '', nome: '', modo: 'lote', loteId: '', ids: [], n: '', pesoIn: '', pesoAuto: true, rcIni: '', rcMeta: '', compra: '', preco: '', imp: '', san: '',
+    id: '', nome: '', modo: 'lote', loteId: '', ids: [], n: '', pesoIn: '', pesoAuto: true, rcIni: '', rcMeta: '', compra: '', de: '', ate: '', real: '', preco: '', imp: '', san: '',
     fases: [faseNova('Adaptação'), faseNova('Engorda'), faseNova('Terminação')]
   });
   let CUR = novaSim(), FQ = '';
@@ -34,6 +34,16 @@
     if (CUR.modo === 'manual' || !CUR.pesoAuto) return;
     const p = autoPeso(); CUR.pesoIn = p ? fmt(p, 1).replace(/\./g, '') : '';
   }
+  /* custo total no período e data da última pesagem de cada animal (lido do TIP) */
+  let CC = { key: '', map: new Map() };
+  function custos() {
+    const key = (CUR.de || '') + '|' + (CUR.ate || '') + '|' + (window.TIPREV || 0);
+    if (CC.key !== key) { let map = new Map(); try { if (T.custoAnimais) map = T.custoAnimais(CUR.de || '', CUR.ate || ''); } catch (e) { map = new Map(); } CC = { key, map }; }
+    return CC.map;
+  }
+  const dataPes = a => { const L = (a.pes || []).filter(x => x.d && num(x.kg) > 0).map(x => x.d).sort(); return L.length ? L[L.length - 1] : ''; };
+  const ultData = () => { const L = selAnimais().map(dataPes).filter(Boolean).sort(); return L.length ? L[L.length - 1] : ''; };
+  const custoMedio = () => { const A = selAnimais(), M = custos(), L = A.map(a => (M.get(a.id) || { tot: 0 }).tot); return L.length ? sum(L, x => x) / L.length : 0; };
   const nAnim = () => CUR.modo === 'manual' ? Math.max(0, Math.round(pn(CUR.n))) : selAnimais().length;
   const compraMedia = () => { const L = selAnimais().map(a => num(a.valor)).filter(x => x > 0); return L.length ? sum(L, x => x) / L.length : 0; };
 
@@ -58,10 +68,10 @@
     const c0 = p0 * rc0, c1 = pesoFim * rc1, ganhoC = c1 - c0, ganhoCDia = dias ? ganhoC / dias : 0;
     const arrGanha = ganhoC / 15, arrFinal = c1 / 15;
     const custoArrProd = arrGanha > 0 ? custoProd / arrGanha : 0;
-    const compra = pn(S.compra), custoTotal = compra + custoProd, custoArrFinal = arrFinal > 0 ? custoTotal / arrFinal : 0;
+    const compra = pn(S.compra), real = pn(S.real), custoTotal = compra + real + custoProd, custoArrFinal = arrFinal > 0 ? custoTotal / arrFinal : 0;
     const preco = pn(S.preco), receita = arrFinal * preco, imp = receita * pn(S.imp) / 100;
     const resultado = receita - imp - custoTotal;
-    return { n, p0, rc0, rc1, fs, dias, custoFases, san, custoProd, pesoFim, gmdP, c0, c1, ganhoC, ganhoCDia, arrGanha, arrFinal, custoArrProd, compra, custoTotal, custoArrFinal, preco, receita, imp, resultado, margem: receita > 0 ? resultado / receita * 100 : 0 };
+    return { n, p0, rc0, rc1, fs, dias, custoFases, san, custoProd, pesoFim, gmdP, c0, c1, ganhoC, ganhoCDia, arrGanha, arrFinal, custoArrProd, compra, real, custoTotal, custoArrFinal, preco, receita, imp, resultado, margem: receita > 0 ? resultado / receita * 100 : 0 };
   }
 
   /* ---------- resultado (cartões) ---------- */
@@ -78,9 +88,9 @@
       R.fs.map(f => '<tr><td>' + esc(f.nome) + '</td><td>' + fmt(f.dias, 0) + '</td><td>' + fmt(f.p0, 0) + ' → ' + fmt(f.p1, 0) + '</td><td>' + fmt(f.kgDia, 2) + '</td><td>' + brl(f.rac) + '</td><td>' + brl(f.op) + '</td><td><b>' + brl(f.custo) + '</b></td></tr>').join('') +
       '</tbody></table></div><p class="note" style="margin:6px 0 0">Valores por cabeça. Consumo = peso médio da fase × % do PV.</p></div>';
     h += '<div class="card" style="margin-top:12px"><h3>Custo e resultado (por cabeça)</h3><div class="kv">' +
-      kv('Aquisição', brl(R.compra)) + kv('Ração + operacional', brl(R.custoFases)) + kv('Sanidade/outros', brl(R.san)) + '</div><div class="kv">' +
-      kv('Custo total', brl(R.custoTotal)) + kv('Custo por @ final', R.custoArrFinal ? brl(R.custoArrFinal) : '—') + kv('@ final', R.arrFinal ? fmt(R.arrFinal, 2) : '—') + '</div><div class="kv">' +
-      kv('Receita', R.preco ? brl(R.receita) : '—') + kv('Impostos', R.preco ? brl(R.imp) : '—') + kv('Resultado final', R.preco ? '<span style="color:' + (R.resultado < 0 ? 'var(--red)' : 'var(--green)') + '">' + brl(R.resultado) + '</span>' : '—') + '</div>' +
+      kv('Aquisição', brl(R.compra)) + kv('Custo já realizado', brl(R.real)) + kv('Ração + operacional (fases)', brl(R.custoFases)) + '</div><div class="kv">' + kv('Sanidade/outros', brl(R.san)) + kv('Custo total', brl(R.custoTotal)) + kv('Custo por @ final', R.custoArrFinal ? brl(R.custoArrFinal) : '—') + '</div><div class="kv">' +
+      kv('@ final', R.arrFinal ? fmt(R.arrFinal, 2) : '—') + kv('Receita', R.preco ? brl(R.receita) : '—') + kv('Impostos', R.preco ? brl(R.imp) : '—') + '</div><div class="kv">' +
+      kv('Resultado final', R.preco ? '<span style="color:' + (R.resultado < 0 ? 'var(--red)' : 'var(--green)') + '">' + brl(R.resultado) + '</span>' : '—') + '</div>' +
       (R.preco ? '<p class="note" style="margin:6px 0 0">Margem ' + fmt(R.margem, 1) + '% da receita' + (R.n ? ' · lote de ' + R.n + ' animais: resultado ' + brl(R.resultado * R.n) : '') + '.</p>' : '<p class="note" style="margin:6px 0 0">Informe o preço da @ para ver receita, impostos e resultado.</p>') + '</div>';
     return h;
   }
@@ -97,8 +107,8 @@
     let h = '<div style="display:flex;gap:8px;margin:6px 0"><button type="button" class="btn sm sec" data-act="smTodos">Marcar todos</button><button type="button" class="btn sm line" data-act="smNenhum">Limpar</button></div>' +
       '<input id="sm-q" type="text" placeholder="Buscar brinco" value="' + esc(FQ) + '" style="margin-bottom:6px">';
     h += '<div style="max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:2px 8px" id="sm-lista">' + A.slice(0, 600).map(a => {
-      const lt = (T.S.lotes || []).find(l => l.id === a.loteId), uk = ultimoKg(a);
-      return '<label class="smrow" data-s="' + esc(String(a.brinco).toLowerCase()) + '" style="display:flex;gap:10px;align-items:center;padding:8px 2px;border-bottom:1px solid var(--line)"><input type="checkbox" class="sm-ck" data-id="' + a.id + '" ' + (s.has(a.id) ? 'checked' : '') + ' style="width:20px;height:20px"><span style="flex:1"><b>' + esc(a.brinco) + '</b> <span class="note" style="margin:0">' + esc(lt ? lt.nome : 'sem lote') + '</span></span><span class="note" style="margin:0">' + (uk ? fmt(uk, 0) + ' kg' : '—') + '</span></label>';
+      const lt = (T.S.lotes || []).find(l => l.id === a.loteId), uk = ultimoKg(a), dp = dataPes(a), cs = custos().get(a.id);
+      return '<label class="smrow" data-s="' + esc(String(a.brinco).toLowerCase()) + '" style="display:flex;gap:10px;align-items:center;padding:8px 2px;border-bottom:1px solid var(--line)"><input type="checkbox" class="sm-ck" data-id="' + a.id + '" ' + (s.has(a.id) ? 'checked' : '') + ' style="width:20px;height:20px"><span style="flex:1"><b>' + esc(a.brinco) + '</b> <span class="note" style="margin:0">' + esc(lt ? lt.nome : 'sem lote') + '</span></span><span class="note" style="margin:0;text-align:right">' + (uk ? fmt(uk, 0) + ' kg' : '—') + (dp ? ' · ' + fmtData(dp) : '') + '<br>' + (cs ? brl(cs.tot) : '—') + '</span></label>';
     }).join('') + '</div>';
     return h;
   }
@@ -119,6 +129,9 @@
     h += '<div class="card" style="margin-top:12px"><h3>Entrada e carcaça</h3><div class="cfgrow">' + fld('sm-pesoIn', 'Peso de entrada (kg)', CUR.pesoIn) + fld('sm-rcIni', 'Rendimento inicial (%)', CUR.rcIni) + '</div>' +
       '<div class="cfgrow">' + fld('sm-rcMeta', 'Rendimento meta (%)', CUR.rcMeta) + fld('sm-compra', 'Valor de compra (R$/cab)', CUR.compra) + '</div>' +
       (CUR.modo !== 'manual' ? '<button type="button" class="btn sm line" data-act="smUsaPeso">Usar último peso dos animais</button> <button type="button" class="btn sm line" data-act="smUsaCompra">Usar valor de compra dos animais</button>' : '') + '</div>';
+    h += '<div class="card" style="margin-top:12px"><h3>Custo já realizado</h3><p class="note" style="margin:0 0 8px">Custo total de cada animal (nutrição, operacional fixo e sanidade) dentro do período. Traga do sistema ou digite o valor por cabeça.</p><div class="cfgrow">' + fld('sm-de', 'De', CUR.de, { type: 'date' }) + fld('sm-ate', 'Até', CUR.ate, { type: 'date' }) + '</div>' +
+      (CUR.modo !== 'manual' ? '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><button type="button" class="btn sm line" data-act="smAteUlt">Até a última pesagem</button></div>' : '') +
+      fld('sm-real', 'Custo já realizado (R$/cab)', CUR.real) + (CUR.modo !== 'manual' ? '<button type="button" class="btn sm sec" data-act="smUsaCusto" style="margin-top:6px">Trazer custo dos animais</button>' : '') + '</div>';
     h += '<h3 style="margin:14px 2px 0">Fases</h3><p class="note" style="margin:2px 2px 0">Desmarque as fases que não vai usar. Cada fase começa no peso em que a anterior terminou.</p>' + CUR.fases.map(faseHTML).join('');
     h += '<div class="card" style="margin-top:12px"><h3>Outros custos e venda</h3><div class="cfgrow">' + fld('sm-san', 'Sanidade/outros (R$/cab)', CUR.san) + fld('sm-preco', 'Preço da @ de venda (R$)', CUR.preco) + '</div>' + fld('sm-imp', 'Impostos (% sobre a receita)', CUR.imp) + '</div>';
     h += '<div id="sm-res" style="margin-top:12px">' + resHTML() + '</div>';
@@ -129,13 +142,13 @@
   function info() {
     const el = document.getElementById('sm-info'); if (!el) return;
     const n = nAnim(), cm = compraMedia();
-    el.textContent = CUR.modo === 'manual' ? '' : n + ' animal(is) selecionado(s)' + (autoPeso() ? ' · último peso médio ' + fmt(autoPeso(), 1) + ' kg' : '') + (cm ? ' · compra média ' + brl(cm) : '');
+    el.textContent = CUR.modo === 'manual' ? '' : n + ' animal(is) selecionado(s)' + (autoPeso() ? ' · último peso médio ' + fmt(autoPeso(), 1) + ' kg' : '') + (cm ? ' · compra média ' + brl(cm) : '') + (ultData() ? ' · última pesagem em ' + fmtData(ultData()) : '') + (custoMedio() ? ' · custo médio no período ' + brl(custoMedio()) : '');
   }
   const refresh = () => { const r = document.getElementById('sm-res'); if (r) r.innerHTML = resHTML(); info(); };
   const redraw = () => { T.render(false); setTimeout(info, 0); };
 
   /* ---------- eventos ---------- */
-  const TOP = ['nome', 'n', 'pesoIn', 'rcIni', 'rcMeta', 'compra', 'preco', 'imp', 'san'];
+  const TOP = ['nome', 'n', 'pesoIn', 'rcIni', 'rcMeta', 'compra', 'preco', 'imp', 'san', 'real', 'de', 'ate'];
   document.addEventListener('input', e => {
     const id = (e.target && e.target.id) || '';
     if (id === 'sm-q') { FQ = e.target.value; const q = FQ.trim().toLowerCase(); document.querySelectorAll('.smrow').forEach(r => { r.style.display = !q || r.dataset.s.includes(q) ? '' : 'none'; }); return; }
@@ -143,7 +156,7 @@
     const m = id.match(/^sm-f(\d)-(\w+)$/);
     if (m) { CUR.fases[+m[1]][m[2]] = e.target.value; refresh(); return; }
     const k = id.slice(3);
-    if (TOP.includes(k)) { CUR[k] = e.target.value; if (k === 'pesoIn') CUR.pesoAuto = false; if (k === 'n') info(); refresh(); }
+    if (TOP.includes(k)) { CUR[k] = e.target.value; if (k === 'pesoIn') CUR.pesoAuto = false; if (k === 'n') info(); if (k === 'de' || k === 'ate') { if (e.type === 'input') { redraw(); return; } } refresh(); }
   });
   document.addEventListener('change', e => {
     const t = e.target, id = (t && t.id) || '';
@@ -172,6 +185,8 @@
     smTodos: () => { CUR.ids = (T.S.animais || []).map(a => a.id); CUR.pesoAuto = true; aplicaAuto(); redraw(); },
     smNenhum: () => { CUR.ids = []; CUR.pesoAuto = true; aplicaAuto(); redraw(); },
     smUsaPeso: () => { CUR.pesoAuto = true; aplicaAuto(); redraw(); },
+    smAteUlt: () => { const d = ultData(); if (!d) return toast('Os animais não têm pesagem'); CUR.ate = d; redraw(); },
+    smUsaCusto: () => { const c = custoMedio(); if (!c) return toast('Sem custo no período para esses animais'); CUR.real = String(r2(c)).replace('.', ','); redraw(); },
     smUsaCompra: () => { const c = compraMedia(); if (!c) return toast('Os animais não têm valor de compra'); CUR.compra = String(r2(c)).replace('.', ','); redraw(); },
     smPdf: async () => {
       const R = calc(); if (!(R.p0 > 0) || !R.fs.length) return toast('Preencha o peso de entrada e ao menos uma fase');
@@ -183,7 +198,7 @@
       P.h('Fases (por cabeça)', 11);
       P.tab(['Fase', 'Dias', 'GMD', 'Peso ini', 'Peso fim', 'Kg/dia', 'Ração', 'Operac.', 'Custo'], R.fs.map(f => [f.nome, fmt(f.dias, 0), fmt(f.gmd, 3), fmt(f.p0, 1), fmt(f.p1, 1), fmt(f.kgDia, 2), brl(f.rac), brl(f.op), brl(f.custo)]), [22, 8, 10, 12, 12, 10, 16, 16, 16], ['l', 'r', 'r', 'r', 'r', 'r', 'r', 'r', 'r']);
       P.h('Custo e resultado (por cabeça)', 11);
-      P.kvs([['Aquisição', brl(R.compra)], ['Ração + operacional', brl(R.custoFases)], ['Sanidade/outros', brl(R.san)], ['Custo total', brl(R.custoTotal)], ['Preço da @', R.preco ? brl(R.preco) : '-'], ['Receita', R.preco ? brl(R.receita) : '-']]);
+      P.kvs([['Aquisição', brl(R.compra)], ['Custo já realizado', brl(R.real)], ['Ração + operac. (fases)', brl(R.custoFases)], ['Sanidade/outros', brl(R.san)], ['Custo total', brl(R.custoTotal)], ['Preço da @', R.preco ? brl(R.preco) : '-'], ['Receita', R.preco ? brl(R.receita) : '-']]);
       P.kvs([['Impostos (' + fmt(pn(CUR.imp), 2) + '%)', R.preco ? brl(R.imp) : '-'], ['RESULTADO FINAL', R.preco ? brl(R.resultado) : '-'], ['Margem', R.preco ? fmt(R.margem, 1) + '%' : '-']]);
       if (R.n && R.preco) P.kvs([['Resultado do lote (' + R.n + ' animais)', brl(R.resultado * R.n)], ['Receita do lote', brl(R.receita * R.n)], ['Custo total do lote', brl(R.custoTotal * R.n)]]);
       P.p('Simulação: o consumo de cada fase = peso médio da fase x % do PV; carcaca = peso x rendimento; @ = carcaca / 15. Valor da @ produzida = (racao + operacional + sanidade) / @ de carcaca ganhas. Nao altera lotes, custos nem cobrancas.');
