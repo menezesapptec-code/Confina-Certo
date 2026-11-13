@@ -1,6 +1,6 @@
 // Service worker: rede primeiro, cache como reserva (funciona sem internet e atualiza sozinho ao subir arquivos novos)
-const V = 'confina-v10';
-const SHELL = ['./', 'index.html', 'operacional.js'];
+const V = 'confina-v11';
+const SHELL = ['./', 'index.html', 'operacional.js', 'simulacao.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => Promise.allSettled(SHELL.map(u => c.add(u)))).then(() => self.skipWaiting()));
