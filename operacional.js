@@ -156,15 +156,15 @@
   const legenda = items => '<div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:12px;color:var(--mut)">' + items.map(i => '<span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:' + i.c + ';margin-right:4px"></i>' + esc(i.n) + '</span>').join('') + '</div>';
 
   /* ---------- barra dos 3 setores ---------- */
-  const SET = [['geral', 'Painel geral'], ['painel', 'TIP', 'Terminação intensiva a pasto'], ['op', 'Custo operacional']];
-  const setorDe = v => v === 'geral' ? 'geral' : v === 'op' ? 'op' : 'painel';
+  const SET = [['geral', 'Painel geral'], ['painel', 'TIP', 'Terminação intensiva a pasto'], ['op', 'Custo operacional'], ['sim', 'Simulação']];
+  const setorDe = v => v === 'geral' ? 'geral' : v === 'op' ? 'op' : v === 'sim' ? 'sim' : 'painel';
   function bar(view) {
     const vw = document.getElementById('view'); if (!vw) return;
     if (T.isAdmin && T.isAdmin()) return;
     const on = setorDe(view), el = document.createElement('div'); el.id = 'setor';
     vw.insertBefore(el, vw.firstChild);
-    el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:5px">' +
-      SET.map(([id, t, sub]) => '<a href="#' + id + '" style="text-align:center;padding:10px 4px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;line-height:1.15;' + (on === id ? 'background:var(--green);color:#f4efe6' : 'color:var(--ink)') + '">' + t + (sub ? '<div style="font-size:10px;font-weight:500;opacity:.8;margin-top:2px">' + sub + '</div>' : '') + '</a>').join('') + '</div>';
+    el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:0 0 14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:5px">' +
+      SET.map(([id, t, sub]) => '<a href="#' + id + '" style="text-align:center;padding:10px 2px;border-radius:10px;font-weight:700;font-size:12px;text-decoration:none;line-height:1.15;' + (on === id ? 'background:var(--green);color:#f4efe6' : 'color:var(--ink)') + '">' + t + (sub ? '<div style="font-size:10px;font-weight:500;opacity:.8;margin-top:2px">' + sub + '</div>' : '') + '</a>').join('') + '</div>';
   }
 
   /* ---------- estado de tela ---------- */
