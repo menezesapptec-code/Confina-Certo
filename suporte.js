@@ -17,6 +17,13 @@
     return '<p style="margin:6px 0">' + ls.join('<br>') + '</p>';
   }).join('');
 
+  const meus = () => {
+    const L = Object.values((T.chamados && T.chamados()) || {}).sort((a, b) => String(b.em || '').localeCompare(String(a.em || ''))).slice(0, 5);
+    if (!L.length) return '';
+    return '<h3 style="margin:16px 0 4px">Chamados enviados</h3>' + L.map(x => '<div class="card" style="margin:6px 0"><div style="display:flex;justify-content:space-between;gap:8px"><b>' + esc(String(x.pergunta || '').slice(0, 90)) + '</b><span class="b ' + (x.status === 'resolvido' ? 'ok' : 'warn') + '">' + (x.status === 'resolvido' ? 'Respondido' : 'Em análise') + '</span></div>'
+      + (x.resposta ? '<p style="margin:8px 0 0;white-space:pre-wrap"><b>Resposta do suporte:</b> ' + esc(x.resposta) + '</p>' : '<p class="note" style="margin:6px 0 0">Enviado em ' + esc(String(x.em || '').slice(0, 10).split('-').reverse().join('/')) + '. Aguardando a equipe.</p>') + '</div>').join('');
+  };
+
   VIEWS.sup = () => {
     let h = head('Suporte', 'Pergunte o que está acontecendo no sistema. A resposta usa os dados da sua fazenda.', '');
     h += '<div class="card"><div id="sp-chat">' + (CH.length ? CH.map(m => m.r === 'u'
@@ -28,6 +35,7 @@
       + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn" data-act="spEnviar"' + (BUSY ? ' disabled' : '') + '>Perguntar</button>'
       + '<button class="btn sec" data-act="spSuporte">Enviar para o suporte</button>'
       + (CH.length ? '<button class="btn line" data-act="spLimpa">Nova conversa</button>' : '') + '</div>'
+      + meus()
       + '<p class="note" style="margin:10px 0 0">A resposta é uma explicação automática com base nos seus dados e pode errar. Se parecer erro do sistema, toque em <b>Enviar para o suporte</b>: o diagnóstico vai junto para a equipe corrigir.</p></div>';
     return h;
   };
@@ -56,6 +64,13 @@
 
   async function enviarSuporte() {
     const ult = [...CH].reverse().find(m => m.r === 'u');
+    if (!ult) return toast('Faça uma pergunta antes de enviar ao suporte');
+    if (T.enviarChamado) {
+      try {
+        await T.enviarChamado({ pergunta: ult.t, conversa: CH, fatos: T.diagSuporte(ult.t) });
+        toast('Enviado para o suporte. A resposta aparece aqui na aba Suporte.'); T.render(false); return;
+      } catch (e) { toast('Não consegui enviar direto (' + (e.message || e) + '). Vou baixar o arquivo.'); }
+    }
     const rel = { gerado: new Date().toISOString(), conversa: CH, diagnostico: T.diagSuporte(ult ? ult.t : ''), dadosCompletos: null };
     const nome = 'suporte-' + (T.S.cfg && T.S.cfg.fazenda ? String(T.S.cfg.fazenda).toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'fazenda') + '-' + T.hoje() + '.json';
     const blob = new Blob([JSON.stringify(rel, null, 1)], { type: 'application/json' });
