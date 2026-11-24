@@ -14,7 +14,7 @@
   const cats = () => of('cat').sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   const maqs = () => of('maq').sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   const novo = o => { o.id = 'op_' + uid(); D().push(o); return o; };
-  const SUG = ['Combustível (diesel)', 'Sanidade', 'Mão de obra', 'Manutenção de cercas, cochos e curral', 'Manutenção de maquinaria', 'Pastagem', 'Investimentos (cerca, cocho, maquinaria...)'];
+  const SUG = ['Combustível (diesel)', 'Mão de obra', 'Manutenção de cercas, cochos e curral', 'Manutenção de maquinaria', 'Pastagem', 'Investimentos (cerca, cocho, maquinaria...)'];
   const MESES_INV = 60;
   function catDiesel() {
     let c = of('cat').find(x => x.diesel);
@@ -83,8 +83,8 @@
     });
     const di = dieselInfo(), cd = of('cat').find(x => x.diesel);
     di.ab.forEach(x => { const v = di.custoAb(x); if (v > 0 && x.data) add(ym(x.data), cd ? cd.id : '', v, { tipo: 'da', o: x, v }); });
-    const si = sanInfo(), cs = of('cat').find(x => x.san);
-    si.sai.forEach(x => { const v = si.custoSai(x); if (v > 0 && x.data) add(ym(x.data), cs ? cs.id : '', v, { tipo: 'ss', o: x, v }); });
+    /* sanidade não entra mais no operacional: fica só no TIP */
+    const si = sanInfo();
     /* dias-animal por mês (todos os animais da fazenda; quem não foi vendido conta até hoje e segue igual nos meses futuros) */
     const dias = new Map();
     T.ALLA().forEach(a => {
@@ -180,13 +180,12 @@
   /* ---------- OPERACIONAL ---------- */
   VIEWS.op = () => {
     const C = calc(), m = mesSel(), tab = F.tab;
-    const tabs = [['resumo', 'Resumo'], ['lanc', 'Lançamentos'], ['diesel', 'Diesel'], ['san', 'Sanidade'], ['cad', 'Cadastros']];
+    const tabs = [['resumo', 'Resumo'], ['lanc', 'Lançamentos'], ['diesel', 'Diesel'], ['cad', 'Cadastros']];
     const ch = '<div class="chips">' + tabs.map(([id, t]) => '<button class="chip ' + (tab === id ? 'on' : '') + '" data-act="opTab" data-id="' + id + '">' + t + '</button>').join('') + '</div>';
     let h = head('Custo operacional', 'Controle à parte do que a fazenda gasta, rateado por cabeça (não entra no TIP)', '<button class="btn sm" data-act="opLanNovo">+ Custo</button>') + ch;
     if (tab === 'resumo') h += opResumo(C, m);
     else if (tab === 'lanc') h += mSel(C) + opLanc(C, m);
     else if (tab === 'diesel') h += opDiesel(C, m);
-    else if (tab === 'san') h += opSan(C, m);
     else h += opCad();
     return h;
   };
